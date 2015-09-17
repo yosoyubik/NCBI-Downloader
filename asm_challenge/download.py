@@ -185,16 +185,10 @@ def download_species(species):
 
 def main(args):
     args = parse_args(args)
-
-    species = [{"name": 'Lysteria', "tax_id": 1639},
-               {"name": 'Salmonella', "tax_id": 590}]
-    # download_species(species)
     # http://www.ncbi.nlm.nih.gov/biosample?LinkName=bioproject_biosample_all&from_uid=295366&format=text
     bioproject_ids_lysteria = ['295367', '21211', '215355']
     bioproject_ids_salmonella = ['295366', '237212', '227458',
                                  '252015', '230403']
-    bioproject_ids_lysteria = ['295367']
-    bioproject_ids_salmonella = ['295366']
     bioprojects = [{'name': 'Lysteria', "id": bioproject_ids_lysteria},
                    {'name': 'Salmonella', "id": bioproject_ids_salmonella}]
     for project in bioprojects:
@@ -208,6 +202,10 @@ def main(args):
             dbio = Path(dir)
             dbio.makedirs_p()
             get_fastq_url_from_bioproject(id, dir)
+
+    species = [{"name": 'Lysteria', "tax_id": 1639},
+               {"name": 'Salmonella', "tax_id": 590}]
+    download_species(species)
     _logger.info("Script ends here")
 
 
