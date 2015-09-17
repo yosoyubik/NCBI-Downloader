@@ -26,8 +26,7 @@ from StringIO import StringIO
 from path import Path
 import os
 import re
-from lxml import etree
-from lxml.html.soupparser import fromstring
+
 
 from asm_challenge import __version__
 
