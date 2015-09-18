@@ -6,9 +6,9 @@ console script. To run this script uncomment the following line in the
 entry_points section in setup.cfg:
 
     console_scripts =
-        hello_world = asm_challenge.module:function
+        download = asm_challenge.download:run
 
-Then run `python setup.py install` which will install the command `hello_world`
+Then run `python setup.py install` which will install the command `download`
 inside your current environment.
 Besides console scripts, the header (i.e. until _logger...) of this file can
 also be used as template for Python modules.
@@ -26,7 +26,7 @@ from StringIO import StringIO
 from path import Path
 import os
 import re
-
+import json
 
 from asm_challenge import __version__
 
@@ -36,6 +36,16 @@ __license__ = "none"
 
 _logger = logging.getLogger(__name__)
 
+
+bioproject_files = {
+    "295366": "./input/295366.txt",
+    "215355": "./input/215355.txt",
+    "295367": "./input/295367.txt",
+    "237212": "./input/237212.txt",
+    "227458": "./input/227458.txt",
+    "252015": "./input/252015.txt",
+    "230403": "./input/230403.txt"
+}
 
 def parse_args(args):
     """
@@ -74,6 +84,95 @@ def get_fastq_url_from_bioproject(bioproject, dir):
         _logger.info(accession)
         download_fastqSRA(accession, dir)
 
+def get_metadata(accession):
+
+    metadata = {
+        "sample_name": accession,
+        "group_name": "",
+        "file_names": "",
+        "sequencing_platform": "Illumina",
+        "sequencing_type": "single",
+        "pre_assembled": "no",
+        "sample_type": "isolate",
+        "organism": "unknown",
+        "strain": "",
+        "subtype": "",
+        "country": "",
+        "region": "",
+        "city": "",
+        "zip_code": "",
+        "longitude": "",
+        "latitude": "",
+        "location_note": "",
+        "isolation_source": "unknown",
+        "source_note": "",
+        "pathogenic": "unknown",
+        "pathogenicity_note": "",
+        "collection_date": "",
+        "collected_by": "",
+        "usage_restrictions": "private",
+        "release_date": "",
+        "email_address": "",
+        "notes": "",
+        "upload_dir": 1,
+        "batch": "true"
+    }
+    isolation_source = ["human", "water", "food", "animal", "laboratory", "other"]
+    url = 'http://www.ncbi.nlm.nih.gov/sra/?term='+ accession +'&format=text'
+    data = urllib.urlopen(url).read()
+    m = re.findall(r"Sample Attributes: (.+)\n", data)
+    _logger.info(m)
+    for answer in m:
+        for attributes in answer.split(';'):
+            stat = attributes.split('=')
+            _logger.info(stat)
+            if stat[0].strip() == 'geo_loc_name' and ":" in stat[1]:
+                metadata["country"] = stat[1].split(":")[0]
+                metadata["region"] = stat[1].split(":")[1]
+            elif stat[0].strip() == 'geo_loc_name':
+                metadata["country"] = stat[1]
+            if stat[0].strip() in metadata:
+                if stat[0].strip() == 'isolation_source':
+                    if stat[1] not in isolation_source:
+                        metadata[stat[0].strip()] = 'other'
+                else:
+                    metadata[stat[0].strip()] = stat[1]
+        metadata["file_names"] = "%s.fastq" % accession.strip('\n')
+    return metadata
+
+
+def get_fastq_from_list(bioproject, dir):
+    """
+    Get Fastq from list of Ids
+
+    :param bioproject: ABioproject from SRA
+    :return: table of FTP URLs
+    """
+
+    metadata = []
+    f = open(bioproject_files[bioproject], 'r')
+    line = 0
+    for accession in f:
+        accession = accession.strip()
+        _logger.info(accession)
+        metadata = get_metadata(accession)
+        _logger.info(metadata)
+        dbio = Path(dir + '/' + str(line))
+        dbio.makedirs_p()
+        if not os.path.exists(dir + '/' + accession + '.fastq'):
+            _logger.info(accession.strip() + ' new')
+            _logger.info("%s/%s/" % (dir, str(line)))
+            os.system("fastq-dump %s --outdir %s/%s/"
+                      % (accession.strip(), dir, str(line)))
+        else:
+            _logger.info(accession + ' moving...')
+            move(dir + '/' + accession + '.fastq', dir + '/' + line)
+        f = open(dir + '/' + str(line) + '/' + 'meta.json', 'w')
+        _logger.info(json.dumps(metadata))
+        f.write(json.dumps(metadata))
+        f.close()
+        line += 1
+    return metadata
 
 def download_fastq(accession, dir):
     """
@@ -186,7 +285,10 @@ def download_species(species):
 def main(args):
     args = parse_args(args)
     # http://www.ncbi.nlm.nih.gov/biosample?LinkName=bioproject_biosample_all&from_uid=295366&format=text
-    bioproject_ids_lysteria = ['295367', '21211', '215355']
+    bioproject_ids_lysteria = ['295367',
+                            #    '21211',
+                               '215355'
+                               ]
     bioproject_ids_salmonella = ['295366', '237212', '227458',
                                  '252015', '230403']
     bioprojects = [{'name': 'Lysteria', "id": bioproject_ids_lysteria},
@@ -201,11 +303,12 @@ def main(args):
             dir = './data/bioprojects/%s/PRJNA%s' % (species_path, id)
             dbio = Path(dir)
             dbio.makedirs_p()
-            get_fastq_url_from_bioproject(id, dir)
+            # get_fastq_url_from_bioproject(id, dir)
+            get_fastq_from_list(id, dir)
 
     species = [{"name": 'Lysteria', "tax_id": 1639},
                {"name": 'Salmonella', "tax_id": 590}]
-    download_species(species)
+    # download_species(species)
     _logger.info("Script ends here")
 
 
