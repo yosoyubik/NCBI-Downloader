@@ -166,7 +166,8 @@ def get_fastq_from_list(bioproject, dir):
                       % (accession.strip(), dir, str(line)))
         else:
             _logger.info(accession + ' moving...')
-            move(dir + '/' + accession + '.fastq', dir + '/' + line)
+            d = Path(dir + '/' + accession + '.fastq')
+            d.move(dir + '/' + str(line))
         f = open(dir + '/' + str(line) + '/' + 'meta.json', 'w')
         _logger.info(json.dumps(metadata))
         f.write(json.dumps(metadata))
