@@ -101,7 +101,7 @@ def get_metadata(accession, bioID):
         "group_name": "",
         "file_names": "",
         "sequencing_platform": "Illumina",
-        "sequencing_type": "single",
+        "sequencing_type": "paired",
         "pre_assembled": "no",
         "sample_type": "isolate",
         "organism": bioproject_organism[bioID],
