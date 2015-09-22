@@ -179,10 +179,12 @@ def get_fastq_from_list(bioproject, dir):
         metadata = get_metadata(accession, bioproject)
         _logger.info(metadata)
 
-        if line/total < 0.5:
+        if line/total < 0.5 and len(total) > 18:
             FOLDER = dir + '_batch_1/' + str(line) + '/'
-        else:
+        elif line/total >= 0.5 and len(total) > 18:
             FOLDER = dir + '_batch_2/' + str(line) + '/'
+        else:
+            FOLDER = dir + '/' + str(line) + '/'
         dbio = Path(FOLDER)
         dbio.makedirs_p()
         if not os.path.exists(dir + '/' + accession + '.fastq'):
@@ -214,14 +216,25 @@ def get_metadata_from_list(bioproject, dir):
     metadata = []
     f = open(bioproject_files[bioproject], 'r')
     line = 0
+    total = len([aux for aux in f])
+    _logger.error(total)
+    f = open(bioproject_files[bioproject], 'r')
     for accession in f:
         accession = accession.strip()
         _logger.info(accession)
         metadata = get_metadata(accession, bioproject)
         _logger.info(metadata)
-        dbio = Path(dir + '/' + str(line))
+
+        if line/total < 0.5 and total > 19:
+            FOLDER = dir + '_batch_1/' + str(line) + '/'
+        elif line/total >= 0.5 and total > 19:
+            FOLDER = dir + '_batch_2/' + str(line) + '/'
+        else:
+            FOLDER = dir + '/' + str(line) + '/'
+
+        dbio = Path(FOLDER)
         dbio.makedirs_p()
-        f = open(dir + '/' + str(line) + '/' + 'meta.json', 'w')
+        f = open(FOLDER + 'meta.json', 'w')
         _logger.info(json.dumps(metadata))
         f.write(json.dumps(metadata))
         f.close()
@@ -355,16 +368,16 @@ def main(args):
     for project in bioprojects:
         species_path = project["name"]
         _logger.info(species_path)
-        d = Path('./data2/bioprojects/%s' % species_path)
+        d = Path('./data_split/bioprojects/%s' % species_path)
         d.makedirs_p()
         for id in project["id"]:
             _logger.info(id)
-            dir = './data2/bioprojects/%s/PRJNA%s' % (species_path, id)
-            dbio = Path(dir)
-            dbio.makedirs_p()
+            dir = './data_split/bioprojects/%s/PRJNA%s' % (species_path, id)
+            # dbio = Path(dir)
+            # dbio.makedirs_p()
             # get_fastq_url_from_bioproject(id, dir)
-            get_metadata_from_list(id, dir)
-            #get_fastq_from_list(id, dir)
+            # get_metadata_from_list(id, dir)
+            get_fastq_from_list(id, dir)
 
     species = [{"name": 'Lysteria', "tax_id": 1639},
                {"name": 'Salmonella', "tax_id": 590}]
