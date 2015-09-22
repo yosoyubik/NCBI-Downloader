@@ -47,6 +47,16 @@ bioproject_files = {
     "230403": "./input/230403.txt"
 }
 
+bioproject_organism = {
+    "295366": "Salmonella Enteritidis",
+    "215355": "Listeria monocytogenes",
+    "295367": "Listeria monocytogenes",
+    "237212": "Salmonella Enteritidis",
+    "227458": "Salmonella Enteritidis",
+    "252015": "Salmonella Enteritidis",
+    "230403": "Salmonella Enteritidis"
+}
+
 def parse_args(args):
     """
     Parse command line parameters
@@ -84,7 +94,7 @@ def get_fastq_url_from_bioproject(bioproject, dir):
         _logger.info(accession)
         download_fastqSRA(accession, dir)
 
-def get_metadata(accession):
+def get_metadata(accession, bioID):
 
     metadata = {
         "sample_name": accession,
@@ -94,7 +104,7 @@ def get_metadata(accession):
         "sequencing_type": "single",
         "pre_assembled": "no",
         "sample_type": "isolate",
-        "organism": "unknown",
+        "organism": bioproject_organism[bioID],
         "strain": "",
         "subtype": "",
         "country": "",
@@ -104,7 +114,7 @@ def get_metadata(accession):
         "longitude": "",
         "latitude": "",
         "location_note": "",
-        "isolation_source": "unknown",
+        "isolation_source": "other",
         "source_note": "",
         "pathogenic": "unknown",
         "pathogenicity_note": "",
@@ -135,9 +145,16 @@ def get_metadata(accession):
                 if stat[0].strip() == 'isolation_source':
                     if stat[1] not in isolation_source:
                         metadata[stat[0].strip()] = 'other'
+                        metadata['source_note'] = stat[1]
+                elif stat[0].strip() == 'BioSample':
+                    metadata['notes'] = metadata['notes'] + ' BioSample=' + stat[1] + ', '
+                # elif stat[0].strip() == 'run':
+                #     metadata['notes'] = metadata['notes'] + ' run=' + stat[1]  + ', '
                 else:
                     metadata[stat[0].strip()] = stat[1]
-        metadata["file_names"] = "%s.fastq" % accession.strip('\n')
+        metadata['file_names'] = '%s_1.fastq.gz %s_2.fastq.gz' % (accession.strip('\n'), accession.strip('\n'))
+        metadata['notes'] = metadata['notes'] + ' run=' + accession  + ', '
+        metadata['sample_name'] = metadata['strain']
     return metadata
 
 
@@ -152,28 +169,64 @@ def get_fastq_from_list(bioproject, dir):
     metadata = []
     f = open(bioproject_files[bioproject], 'r')
     line = 0
+    total = len([aux for aux in f])
+    _logger.error(total)
+    f = open(bioproject_files[bioproject], 'r')
     for accession in f:
         accession = accession.strip()
         _logger.info(accession)
-        metadata = get_metadata(accession)
+        metadata = get_metadata(accession, bioproject)
         _logger.info(metadata)
-        dbio = Path(dir + '/' + str(line))
+
+        if line/total < 0.5:
+            FOLDER = dir + '_batch_1/' + str(line) + '/'
+        else:
+            FOLDER = dir + '_batch_2/' + str(line) + '/'
+        dbio = Path(FOLDER)
         dbio.makedirs_p()
         if not os.path.exists(dir + '/' + accession + '.fastq'):
             _logger.info(accession.strip() + ' new')
-            _logger.info("%s/%s/" % (dir, str(line)))
-            os.system("fastq-dump %s --outdir %s/%s/"
-                      % (accession.strip(), dir, str(line)))
+            _logger.info("%s" % (FOLDER))
+            os.system("fastq-dump %s --split-3 --gzip --outdir %s"
+                      % (accession.strip(), FOLDER))
         else:
             _logger.info(accession + ' moving...')
-            d = Path(dir + '/' + accession + '.fastq')
-            d.move(dir + '/' + str(line))
+            d = Path(dir + '_batch_1/' + accession + '.fastq')
+            d.move(ddir + '_batch_1/' + str(line))
+        f = open(FOLDER + 'meta.json', 'w')
+        _logger.info(json.dumps(metadata))
+        f.write(json.dumps(metadata))
+        f.close()
+
+        line += 1
+    return metadata
+
+
+def get_metadata_from_list(bioproject, dir):
+    """
+    Get Fastq from list of Ids
+
+    :param bioproject: ABioproject from SRA
+    :return: table of FTP URLs
+    """
+
+    metadata = []
+    f = open(bioproject_files[bioproject], 'r')
+    line = 0
+    for accession in f:
+        accession = accession.strip()
+        _logger.info(accession)
+        metadata = get_metadata(accession, bioproject)
+        _logger.info(metadata)
+        dbio = Path(dir + '/' + str(line))
+        dbio.makedirs_p()
         f = open(dir + '/' + str(line) + '/' + 'meta.json', 'w')
         _logger.info(json.dumps(metadata))
         f.write(json.dumps(metadata))
         f.close()
         line += 1
     return metadata
+
 
 def download_fastq(accession, dir):
     """
@@ -288,23 +341,28 @@ def main(args):
     # http://www.ncbi.nlm.nih.gov/biosample?LinkName=bioproject_biosample_all&from_uid=295366&format=text
     bioproject_ids_lysteria = ['295367',
                             #    '21211',
-                               '215355'
+                            #   '215355'
                                ]
-    bioproject_ids_salmonella = ['295366', '237212', '227458',
-                                 '252015', '230403']
+    bioproject_ids_salmonella = ['295366',
+                                #  '237212',
+                                #  '227458',
+                                #  '252015',
+                                #  '230403'
+                                 ]
     bioprojects = [{'name': 'Lysteria', "id": bioproject_ids_lysteria},
                    {'name': 'Salmonella', "id": bioproject_ids_salmonella}]
     for project in bioprojects:
         species_path = project["name"]
         _logger.info(species_path)
-        d = Path('./data/bioprojects/%s' % species_path)
+        d = Path('./data2/bioprojects/%s' % species_path)
         d.makedirs_p()
         for id in project["id"]:
             _logger.info(id)
-            dir = './data/bioprojects/%s/PRJNA%s' % (species_path, id)
+            dir = './data2/bioprojects/%s/PRJNA%s' % (species_path, id)
             dbio = Path(dir)
             dbio.makedirs_p()
             # get_fastq_url_from_bioproject(id, dir)
+            #get_metadata_from_list(id, dir)
             get_fastq_from_list(id, dir)
 
     species = [{"name": 'Lysteria', "tax_id": 1639},
