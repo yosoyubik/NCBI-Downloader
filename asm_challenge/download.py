@@ -179,9 +179,9 @@ def get_fastq_from_list(bioproject, dir):
         metadata = get_metadata(accession, bioproject)
         _logger.info(metadata)
 
-        if line/total < 0.5 and len(total) > 18:
+        if line/total < 0.5 and total > 19:
             FOLDER = dir + '_batch_1/' + str(line) + '/'
-        elif line/total >= 0.5 and len(total) > 18:
+        elif line/total >= 0.5 and total > 19:
             FOLDER = dir + '_batch_2/' + str(line) + '/'
         else:
             FOLDER = dir + '/' + str(line) + '/'
