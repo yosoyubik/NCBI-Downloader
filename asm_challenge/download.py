@@ -152,7 +152,8 @@ def get_metadata(accession, bioID):
                 #     metadata['notes'] = metadata['notes'] + ' run=' + stat[1]  + ', '
                 else:
                     metadata[stat[0].strip()] = stat[1]
-        metadata['file_names'] = '%s_1.fastq.gz %s_2.fastq.gz' % (accession.strip('\n'), accession.strip('\n'))
+        # metadata['file_names'] = '%s_1.fastq.gz %s_2.fastq.gz' % (accession.strip('\n'), accession.strip('\n'))
+        metadata['file_names'] = '%s.fastq' % (accession.strip('\n'))
         metadata['notes'] = metadata['notes'] + ' run=' + accession  + ', '
         metadata['sample_name'] = metadata['strain']
     return metadata
@@ -362,8 +363,8 @@ def main(args):
             dbio = Path(dir)
             dbio.makedirs_p()
             # get_fastq_url_from_bioproject(id, dir)
-            #get_metadata_from_list(id, dir)
-            get_fastq_from_list(id, dir)
+            get_metadata_from_list(id, dir)
+            #get_fastq_from_list(id, dir)
 
     species = [{"name": 'Lysteria', "tax_id": 1639},
                {"name": 'Salmonella', "tax_id": 590}]
