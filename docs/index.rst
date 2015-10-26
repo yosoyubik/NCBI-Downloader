@@ -1,8 +1,8 @@
 =============
-asm_challenge
+Download Taxonomy/Accession
 =============
 
-This is the documentation of **asm_challenge**.
+This is the documentation of **Download Taxonomy/Accession**.
 
 .. note::
 

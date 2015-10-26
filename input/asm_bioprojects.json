@@ -1,0 +1,30 @@
+{
+    "295366": {
+        "accessions": "./input/295366.txt",
+        "organism": "Salmonella Enteritidis"
+    },
+    "215355": {
+        "accessions": "./input/215355.txt",
+        "organism": "Listeria monocytogenes"
+    },
+    "295367": {
+        "accessions": "./input/295367.txt",
+        "organism": "Listeria monocytogenes"
+    },
+    "237212": {
+        "accessions": "./input/237212.txt",
+        "organism": "Salmonella Enteritidis"
+    },
+    "227458": {
+        "accessions": "./input/227458.txt",
+        "organism": "Salmonella Enteritidis"
+    },
+    "252015": {
+        "accessions": "./input/252015.txt",
+        "organism": "Salmonella Enteritidis"
+    },
+    "230403": {
+        "accessions": "./input/230403.txt",
+        "organism": "Salmonella Enteritidis"
+    }
+}

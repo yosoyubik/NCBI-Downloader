@@ -2,8 +2,18 @@
 # -*- coding: utf-8 -*-
 """
 This is a skeleton file that can serve as a starting point for a Python
-console script.
+console script. To run this script uncomment the following line in the
+entry_points section in setup.cfg:
 
+    console_scripts =
+        download = asm_challenge.download:run
+
+Then run `python setup.py install` which will install the command `download`
+inside your current environment.
+Besides console scripts, the header (i.e. until _logger...) of this file can
+also be used as template for Python modules.
+
+Note: This skeleton file can be safely removed if not needed!
 """
 from __future__ import division, print_function, absolute_import
 
@@ -18,14 +28,25 @@ import os
 import re
 import json
 
-from download import __version__
+from pprint import pprint as pp
+
+from subprocess import call
+from progressbar import Bar, Percentage, ProgressBar, ETA
+
+from isolates.metadata import Metadata
+from isolates.sequence import Sequence
+from isolates import __version__
 
 __author__ = "Jose Luis Bellod Cisneros"
 __copyright__ = "Jose Luis Bellod Cisneros"
 __license__ = "none"
 
 _logger = logging.getLogger(__name__)
-
+logging.basicConfig(
+    level=logging.INFO,
+    stream=sys.stdout,
+    format='%(levelname)s:%(message)s'
+)
 
 bioproject_files = {
     "295366": "./input/295366.txt",
@@ -62,7 +83,7 @@ def parse_args_taxonomy(args):
         '-v',
         '--version',
         action='version',
-        version='download-taxonomy {ver}'.format(ver=__version__))
+        version='asm_challenge {ver}'.format(ver=__version__))
     parser.add_argument(
         '-t',
         nargs=2,
@@ -93,7 +114,7 @@ def parse_args_accessions(args):
         '-v',
         '--version',
         action='version',
-        version='download-accession-list {ver}'.format(ver=__version__))
+        version='asm_challenge {ver}'.format(ver=__version__))
 
     parser.add_argument(
         '-a',
@@ -133,73 +154,154 @@ def get_fastq_url_from_bioproject(bioproject, dir):
         download_fastqSRA(accession, dir)
 
 
-def get_metadata(accession, bioID):
+# def get_metadata(accession, bioID):
+#
+#     metadata = {
+#         "sample_name": accession,
+#         "group_name": "",
+#         "file_names": "",
+#         "sequencing_platform": "",
+#         "sequencing_type": "",
+#         "pre_assembled": "",
+#         "sample_type": "",
+#         "organism": "",
+#         "strain": "",
+#         "subtype": "",
+#         "country": "",
+#         "region": "",
+#         "city": "",
+#         "zip_code": "",
+#         "longitude": "",
+#         "latitude": "",
+#         "location_note": "",
+#         "isolation_source": "",
+#         "source_note": "",
+#         "pathogenic": "",
+#         "pathogenicity_note": "",
+#         "collection_date": "",
+#         "collected_by": "",
+#         "usage_restrictions": "",
+#         "release_date": "",
+#         "email_address": "",
+#         "notes": "",
+#         "batch": "true"
+#     }
+#     url = 'http://www.ncbi.nlm.nih.gov/sra/?term=' + accession
+#           + '&format=text'
+#     data = urllib.urlopen(url).read()
+#     match = re.findall(r"Sample Attributes: (.+)\n", data)
+#     _logger.info(m)
+#     for answer in match:
+#         for attributes in answer.split(';'):
+#             stat = attributes.split('=')
+#             att = stat[0].strip('/ ').lower().replace("'", "")
+#             val = stat[1].strip('" ').replace("'", "`")
+#             _logger.info(stat)
+#             if att == 'geo_loc_name' and ":" in stat[1]:
+#                 metadata["country"] = val.split(":")[0]
+#                 metadata["region"] = val.split(":")[1]
+#             elif att == 'geo_loc_name':
+#                 metadata["country"] = val
+#             if att in metadata:
+#                 if att == 'isolation_source':
+#                     found = False
+#                     for cat, keywords in ontology:
+#                         if any([x in val.lower() for x in keywords]):
+#                             found = True
+#                             metadata[att] = cat
+#                             break
+#                     if not found:
+#                         _logger.warning("Source not identified: " + val)
+#                     metadata['source_note'] = val
+#                     # if stat[1] not in isolation_source:
+#                     #     metadata[stat[0].strip()] = 'other'
+#                     #     metadata['source_note'] = stat[1]
+#                 elif att == 'BioSample':
+#                     metadata['notes'] = metadata[
+#                         'notes'] + ' BioSample=' + val + ', '
+#                 # elif stat[0].strip() == 'run':
+#                 #     metadata['notes'] = metadata['notes'] + ' run='
+#                                           + stat[1]
+#                 #     + ', '
+#                 else:
+#                     metadata[stat[0].strip()] = stat[1]
+#         metadata['file_names'] = '%s_1.fastq.gz %s_2.fastq.gz' % (
+#             accession.strip('\n'), accession.strip('\n'))
+#         # metadata['file_names'] = '%s.fastq' % (accession.strip('\n'))
+#         metadata['notes'] = metadata['notes'] + ' run=' + accession + ', '
+#         metadata['sample_name'] = metadata['strain']
+#     return metadata
 
-    metadata = {
-        "sample_name": accession,
-        "group_name": "",
-        "file_names": "",
-        "sequencing_platform": "Illumina",
-        "sequencing_type": "paired",
-        "pre_assembled": "no",
-        "sample_type": "isolate",
-        "organism": bioproject_organism[bioID],
-        "strain": "",
-        "subtype": "",
-        "country": "",
-        "region": "",
-        "city": "",
-        "zip_code": "",
-        "longitude": "",
-        "latitude": "",
-        "location_note": "",
-        "isolation_source": "other",
-        "source_note": "",
-        "pathogenic": "unknown",
-        "pathogenicity_note": "",
-        "collection_date": "",
-        "collected_by": "",
-        "usage_restrictions": "private",
-        "release_date": "",
-        "email_address": "",
-        "notes": "",
-        "upload_dir": 1,
-        "batch": "true"
-    }
-    isolation_source = [
-        "human", "water", "food", "animal", "laboratory", "other"]
-    url = 'http://www.ncbi.nlm.nih.gov/sra/?term=' + accession + '&format=text'
-    data = urllib.urlopen(url).read()
-    m = re.findall(r"Sample Attributes: (.+)\n", data)
-    _logger.info(m)
-    for answer in m:
-        for attributes in answer.split(';'):
-            stat = attributes.split('=')
-            _logger.info(stat)
-            if stat[0].strip() == 'geo_loc_name' and ":" in stat[1]:
-                metadata["country"] = stat[1].split(":")[0]
-                metadata["region"] = stat[1].split(":")[1]
-            elif stat[0].strip() == 'geo_loc_name':
-                metadata["country"] = stat[1]
-            if stat[0].strip() in metadata:
-                if stat[0].strip() == 'isolation_source':
-                    if stat[1] not in isolation_source:
-                        metadata[stat[0].strip()] = 'other'
-                        metadata['source_note'] = stat[1]
-                elif stat[0].strip() == 'BioSample':
-                    metadata['notes'] = metadata[
-                        'notes'] + ' BioSample=' + stat[1] + ', '
-                # elif stat[0].strip() == 'run':
-                #     metadata['notes'] = metadata['notes'] + ' run=' + stat[1]
-                #     + ', '
-                else:
-                    metadata[stat[0].strip()] = stat[1]
-        metadata['file_names'] = '%s_1.fastq.gz %s_2.fastq.gz' % (
-            accession.strip('\n'), accession.strip('\n'))
-        # metadata['file_names'] = '%s.fastq' % (accession.strip('\n'))
-        metadata['notes'] = metadata['notes'] + ' run=' + accession + ', '
-        metadata['sample_name'] = metadata['strain']
-    return metadata
+
+# def get_metadata_from_EBI(accession, attrs):
+#
+#     metadata = {
+#         "sample_name": accession,
+#         "group_name": "",
+#         "file_names": "",
+#         "sequencing_platform": "Illumina",
+#         "sequencing_type": "paired",
+#         "pre_assembled": "no",
+#         "sample_type": "isolate",
+#         "organism": bioproject_organism[bioID],
+#         "strain": "",
+#         "subtype": "",
+#         "country": "",
+#         "region": "",
+#         "city": "",
+#         "zip_code": "",
+#         "longitude": "",
+#         "latitude": "",
+#         "location_note": "",
+#         "isolation_source": "other",
+#         "source_note": "",
+#         "pathogenic": "unknown",
+#         "pathogenicity_note": "",
+#         "collection_date": "",
+#         "collected_by": "",
+#         "usage_restrictions": "private",
+#         "release_date": "",
+#         "email_address": "",
+#         "notes": "",
+#         "upload_dir": 1,
+#         "batch": "true"
+#     }
+#     isolation_source = [
+#         "human", "water", "food", "animal", "laboratory", "other"]
+#     url = 'http://www.ncbi.nlm.nih.gov/sra/?term=' + accession
+#           + '&format=text'
+#     data = urllib.urlopen(url).read()
+#     match = re.findall(r"Sample Attributes: (.+)\n", data)
+#     _logger.info(m)
+#     for answer in match:
+#         for attributes in answer.split(';'):
+#             stat = attributes.split('=')
+#             _logger.info(stat)
+#             if stat[0].strip() == 'geo_loc_name' and ":" in stat[1]:
+#                 metadata["country"] = stat[1].split(":")[0]
+#                 metadata["region"] = stat[1].split(":")[1]
+#             elif stat[0].strip() == 'geo_loc_name':
+#                 metadata["country"] = stat[1]
+#             if stat[0].strip() in metadata:
+#                 if stat[0].strip() == 'isolation_source':
+#                     if stat[1] not in isolation_source:
+#                         metadata[stat[0].strip()] = 'other'
+#                         metadata['source_note'] = stat[1]
+#                 elif stat[0].strip() == 'BioSample':
+#                     metadata['notes'] = metadata[
+#                         'notes'] + ' BioSample=' + stat[1] + ', '
+#                 # elif stat[0].strip() == 'run':
+#                 #     metadata['notes'] = metadata['notes'] + ' run='
+#                       + stat[1]
+#                 #     + ', '
+#                 else:
+#                     metadata[stat[0].strip()] = stat[1]
+#         metadata['file_names'] = '%s_1.fastq.gz %s_2.fastq.gz' % (
+#             accession.strip('\n'), accession.strip('\n'))
+#         # metadata['file_names'] = '%s.fastq' % (accession.strip('\n'))
+#         metadata['notes'] = metadata['notes'] + ' run=' + accession + ', '
+#         metadata['sample_name'] = metadata['strain']
+#     return metadata
 
 
 def get_fastq_from_list(bioproject, dir):
@@ -293,27 +395,34 @@ def download_fastq(accession, dir):
     :param run_accession: Run Accession ID from ENA
     :return: True
     """
-    # _logger.info('Downloading fastq %s' % accession)
     url = 'http://www.ebi.ac.uk/ena/data/warehouse/filereport?accession=' + \
         accession + '&result=read_run'
     data = urllib.urlopen(url).read()
-    table = pd.read_csv(StringIO(data), sep='\t')
-    # _logger.info(table)
-    if table.index != []:
-        _logger.info(url)
-        # if type(table['run_accession'][0]) == type('str'):
-        if isinstance(table['run_accession'][0], type('')):
-            for accession in table['run_accession']:
-                _logger.info(accession)
-                os.system("fastq-dump %s --split-3 --bzip2 --outdir %s" %
-                          (accession, dir))
+    try:
+        table = pd.read_csv(StringIO(data), sep='\t')
+        if table.index != []:
+            if isinstance(table['run_accession'][0], type('')):
+                for accession in table['run_accession']:
+                    try:
+                        retcode = call(
+                            "fastq-dump %s --split-3 --bzip2 --outdir %s" %
+                            (accession, dir))
+                        if retcode < 0:
+                            _logger.error("Child was terminated by signal")
+                        else:
+                            _logger.error("Child returned")
+                    except OSError as e:
+                        return accession
+            else:
+                _logger.warning(table['run_accession'][0])
+                _logger.warning(type(table['run_accession'][0]))
+                return accession
         else:
-            _logger.warning(table['run_accession'][0])
-            _logger.warning(type(table['run_accession'][0]))
-            return None
-    else:
-        _logger.error(table.index)
+            return accession
+    except Exception as e:
+        _logger.error("Download accession data failed %s" % accession)
         _logger.error(url)
+        _logger.error(data)
 
 
 def download_fastqSRA(accession, dir):
@@ -373,7 +482,6 @@ def download_species(species, output):
     # base for advanced search
     url_base = 'http://www.ebi.ac.uk/ena/data/warehouse/search?'
     for specie in species:
-        print(output, specie["name"])
         d = Path('%s/%s' % (output, specie["name"]))
         dir = d.makedirs_p()
         url_query = 'query=\"tax_tree(' + str(specie["tax_id"]) + ')\"'
@@ -381,12 +489,16 @@ def download_species(species, output):
         url_count = '&display=report'
         url_count = '&resultcount'
         url = url_base + url_query + url_result + url_count
-        _logger.info(url)
         url_res = urllib.urlopen(url).read()
-        _logger.info(url_res)
-        n_samples = int(''.join(url_res.split('\n')[0].split()[-1].split(',')))
-        _logger.info(n_samples)
-
+        try:
+            n_samples = int(''.join(
+                url_res.split('\n')[0].split()[-1].split(',')))
+        except Exception as e:
+            _logger.exception(e)
+            quit()
+        _logger.info("Isolates to be downloaded: " + str(n_samples))
+        if n_samples == 0:
+            _logger.exception("This Tax id has no isolates associated")
         url_base = 'http://www.ebi.ac.uk/ena/data/warehouse/search?'
         url_query = 'query=\"tax_tree(' + str(specie["tax_id"]) + ')\"'
         url_result = '&result=sample'
@@ -395,11 +507,43 @@ def download_species(species, output):
         url_limits = '&offset=1&length=' + str(n_samples)
         url = url_base + url_query + url_result + url_display + url_fields +\
             url_limits
-        _logger.info(url)
         data = urllib.urlopen(url).read()
         table = pd.read_csv(StringIO(data), sep='\t')
-        [download_fastq(accesion, dir) for accesion in table['accession']]
-        _logger.info(table['accession'])
+
+        error_accession_list = []
+        pbar = ProgressBar(
+            widgets=[ETA(), Percentage(), Bar()],
+            maxval=len(table['accession'])
+        ).start()
+        i = 0
+        for accession in table['accession']:
+            m = Metadata({
+                'pre_assembled': 'no',
+                'sample_type': 'isolate',
+                # 'organism: fld[head.index('ScientificName')]
+                'pathogenic': 'yes',
+                'usage_restrictions': 'public',
+                'usage_delay': '0'
+                }, accession)
+            m.update_attributes()
+            if m.valid_metadata():
+                s = Sequence(accession, dir)
+                s.download_fastq()
+                if accession not in s.errors:
+                    m.metadata.files = ''.join(s.files)
+                # error_accession_list.append(download_fastq(accession, dir))
+            else:
+                _logger.error('Metadata not valid: %s', accession)
+            pbar.update(i)
+            i += 1
+        pbar.finish()
+        errors = s.errors.items()
+        if errors != []:
+            _logger.info("The following accessions were not downloaded!")
+            for i in errors:
+                _logger.info(e[0])
+        else:
+            _logger.info("All accessions downloaded succesfully!")
 
 
 def download_taxonomy():
@@ -410,10 +554,9 @@ def download_taxonomy():
     :return:
     """
 
-    logging.basicConfig(level=logging.INFO, stream=sys.stdout)
+    # logging.basicConfig(level=logging.INFO, stream=sys.stdout)
     args = parse_args_taxonomy(sys.argv[1:])
     if args.t is not None:
-        _logger.info('Good!')
         download_species(
             [{"name": args.t[0], "tax_id": args.t[1]}],
             args.output[0]
@@ -421,9 +564,8 @@ def download_taxonomy():
     else:
         _logger.error('Usage: [-t TAXID ORGANISM]')
 
-
 def download_accession_list():
-    logging.basicConfig(level=logging.INFO, stream=sys.stdout)
+    # logging.basicConfig(level=logging.INFO, stream=sys.stdout)
     args = parse_args_accessions(sys.argv[1:])
     if args.a is not None:
         _logger.info('Good!')
@@ -472,7 +614,7 @@ def main(args):
 
 
 def run():
-    logging.basicConfig(level=logging.INFO, stream=sys.stdout)
+    # logging.basicConfig(level=logging.INFO, stream=sys.stdout)
     main(sys.argv[1:])
 
 

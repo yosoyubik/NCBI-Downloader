@@ -2,3 +2,6 @@ pandas
 pyftpdlib
 urllib3
 path.py
+progressbar
+pytest
+geocoder

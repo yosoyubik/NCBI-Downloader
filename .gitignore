@@ -59,3 +59,11 @@ target/
 # App
 data
 data2
+data_split
+test
+tempSRA
+myDir
+testPrueba
+
+# Virtual environment
+bin
