@@ -26,10 +26,29 @@ class Metadata():
 
     def __init__(self, attrs, accession):
         self.metadata = copy.deepcopy(metadata)
-        metadata.update(attrs)
-        self.accession = accession
-        self.url = 'http://www.ncbi.nlm.nih.gov/sra/?term=%s&format=text' % (accession)
+        self.metadata.update(attrs)
+        self.accession = accession.strip()
+        self.url = 'http://www.ncbi.nlm.nih.gov/sra/?term=%s&format=text' % (self.accession)
         self.data = urllib.urlopen(self.url).read()
+
+    def FormatDate(yyyy=None, mm=None, dd=None):
+        '''
+        This method stringify the date tuple using a standard format:
+          YYYY-MM-DD or
+          YYYY-MM or
+          YYYY
+        If all arguments are None, FormatDate returns an empty string
+        '''
+        date = ''
+        if yyyy is not None and yyyy != '':
+            if mm is not None and mm != '':
+                if dd is not None and dd != '':
+                    date = '%04d-%02d-%02d' % (yyyy, mm, dd)
+                else:
+                    date = '%04d-%02d' % (yyyy, mm)
+            else:
+                date = '%04d' % (yyyy)
+        return date
 
     def valid_metadata(self):
         '''
@@ -91,6 +110,13 @@ class Metadata():
                 elif att == 'BioSample':
                     self.metadata['notes'] = '%s BioSample=%s, ' % (
                         self.metadata['notes'], val)
+                elif att == 'collection date':
+                    self.metadata[att] = FormatDate(*InterpretDate(val))
+                    if self.metadata[att] == '':
+                        _logger.warning(
+                            'Date Empty: %s',
+                            val, self.accession
+                        )
                 elif att == 'geographic location':
                     geo_dict = {
                         'country': '',
@@ -152,7 +178,7 @@ class Metadata():
                                 geo_dict['location_note'] = g.location
                     self.metadata.update(geo_dict)
                 elif att in self.metadata:
-                    metadata[att] = val
+                    self.metadata[att] = val
                 else:
                     self.metadata['notes'] = '%s %s: %s, ' % (
                         self.metadata['notes'], att, val)

@@ -27,5 +27,6 @@ command -v fastq-dump >/dev/null 2>&1 || {
         tar -xzf sratoolkit.current-centos_linux64.tar.gz
         ln -s ./sra-toolkit/fastq-dump bin/fast-dump
     fi
+    # vdb-config --set repository/user/main/public/root='tempSRA'
     vdb-config --set repository/user/main/public/root=${TEMPDOWNLOAD}
 }

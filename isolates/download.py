@@ -564,6 +564,7 @@ def download_taxonomy():
     else:
         _logger.error('Usage: [-t TAXID ORGANISM]')
 
+
 def download_accession_list():
     # logging.basicConfig(level=logging.INFO, stream=sys.stdout)
     args = parse_args_accessions(sys.argv[1:])

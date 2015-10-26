@@ -12,6 +12,7 @@ import copy
 import logging
 import sys
 from path import Path
+from subprocess import call
 
 logging.basicConfig(
     level=logging.INFO,
@@ -30,14 +31,14 @@ class Sequence(object):
     _sequence_id = 0
 
     def __init__(self, accession, dir):
-        self.accession = accession
-        self.url = 'http://www.ebi.ac.uk/ena/data/warehouse/filereport?accession=%s&result=read_run' % accession
-        self.data = urllib.urlopen(self.url).read()
+        self.accession = accession.strip()
         self.dir = '%s/%s/' % (dir, str(self._sequence_id))
         self.files = []
-        self.data = urllib.urlopen(self.url).read()
-        self.download = 'fastq-dump %s --split-3 --bzip2 --outdir %s' % (
-                         accession, dir)
+        self.error = False
+        self.download = [
+            'fastq-dump', self.accession, '--split-3', '--bzip2',
+            '--outdir', self.dir
+        ]
 
     @property
     def errors(self):
@@ -56,35 +57,24 @@ class Sequence(object):
         :return: True
         '''
         try:
-            table = pd.read_csv(StringIO(self.data), sep='\t')
-        except Exception as e:
-            _logger.error('Download accession data failed %s', self.accession)
-            _logger.error('URL: %s', self.url)
-            self._errors[self.accession] = 'Download accession data failed'
+            Path(self.dir).makedirs_p()
+            retcode = call(self.download)
+        except OSError as e:
+            _logger.error('FastQ Failed: %s [%s]', self.accession, e)
+            _logger.error('CMD: %s', self.download)
+            self._errors[self.accession] = 'FastQ Failed'
+            self.error = True
         else:
-            if table.index != []:
-                if isinstance(table['run_accession'][0], type('')):
-                    for accession in table['run_accession']:
-                        try:
-                            Path(self.dir).makedirs_p()
-                            retcode = call(self.download)
-                            if retcode < 0:
-                                _logger.error('Child was terminated by signal')
-                                self._errors[self.accession] = 'Child was'\
-                                                               'terminated'\
-                                                               '(signal)'
-                            else:
-                                _logger.info('Success: %s', self.accession)
-                                self.files = [
-                                    f.abspath() for f in Path(self.dir).files
-                                ]
-                                self._sequence_id += 1
-                        except OSError as e:
-                            _logger.error('FastQ Failed: %s', self.accession)
-                            self._errors[self.accession] = 'FastQ Failed'
-                else:
-                    _logger.error('Empty \'run accession\': %s', self.accession)
-                    self._errors[self.accession] = 'Empty \'run accession\''
+            if retcode < 0:
+                _logger.error('Child was terminated by signal')
+                self.error = True
+                self._errors[self.accession] = 'Child was'\
+                                               'terminated'\
+                                               '(signal)'
             else:
-                _logger.error('Empty table: %s', self.accession)
-                self._errors[self.accession] = 'Empty table'
+                _logger.info('Success: %s', self.accession)
+                self.files = [
+                    f.abspath() for f in Path(self.dir).files
+                ]
+        finally:
+            self._sequence_id += 1

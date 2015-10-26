@@ -138,10 +138,14 @@ def download_species(species, output):
                 s = Sequence(accession, dir)
                 s.download_fastq()
                 if accession not in s.errors:
-                    m.metadata.files = ''.join(s.files)
+                    m.metadata['file_names'] = ''.join(s.files)
                 # error_accession_list.append(download_fastq(accession, dir))
             else:
-                _logger.error('Metadata not valid: %s', accession)
+                _logger.error('Metadata not valid: %s', m.accession)
+                _logger.error('Metadata not valid: %s', m.url)
+                _logger.error('%s', '= ,'.join(
+                        ["%s = %s" % (att, str(m.metadata[att]))
+                            for att in m.metadata]))
             pbar.update(i)
             i += 1
         pbar.finish()
