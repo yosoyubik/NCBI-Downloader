@@ -15,12 +15,11 @@ the download folder for temporary *.SRA files used by fastq-dump::
     source env/bin/activate
     ./install.sh
 
-This will install the python dependencies and create two entry points:
+This will install the python dependencies and create two entry points
+
 * download-taxonomy::
     usage: download-taxonomy [-h] [-v] [-t TAXID ORGANISM] -out OUTPUT
-
     Download script of isolates fromENA taxonomy or Accession list
-
     optional arguments:
       -h, --help         show this help message and exit
       -v, --version      show program's version number and exit
@@ -28,9 +27,7 @@ This will install the python dependencies and create two entry points:
       -out OUTPUT        Path to save isolates* download-accession-list
 * download-accession-list::
     usage: download-accession-list [-h] [-v] [-a PATH] [-o organism] -out OUTPUT
-
     Download script of isolates fromENA taxonomy or Accession list
-
     optional arguments:
       -h, --help     show this help message and exit
       -v, --version  show program's version number and exit
