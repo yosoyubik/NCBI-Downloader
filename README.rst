@@ -10,9 +10,8 @@ Development
 
 This will install the SRA tool kit if not found in the USER's path and set up
 the download folder for temporary *.SRA files used by fastq-dump::
-    ./setup.sh TEMPORARY_DOWNLOAD_PATH
 
-After you should activate the new environment by typing::
+    ./setup.sh TEMPORARY_DOWNLOAD_PATH
     source env/bin/activate
     ./install.sh
 
