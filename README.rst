@@ -18,6 +18,7 @@ the download folder for temporary *.SRA files used by fastq-dump::
 This will install the python dependencies and create two entry points
 
 * download-taxonomy::
+
     usage: download-taxonomy [-h] [-v] [-t TAXID ORGANISM] -out OUTPUT
     Download script of isolates fromENA taxonomy or Accession list
     optional arguments:
@@ -26,6 +27,7 @@ This will install the python dependencies and create two entry points
       -t TAXID ORGANISM  Tax ID from ENA data archive and organism associated
       -out OUTPUT        Path to save isolates* download-accession-list
 * download-accession-list::
+
     usage: download-accession-list [-h] [-v] [-a PATH] [-o organism] -out OUTPUT
     Download script of isolates fromENA taxonomy or Accession list
     optional arguments:
