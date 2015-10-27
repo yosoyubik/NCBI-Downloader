@@ -36,7 +36,7 @@ class Sequence(object):
         self.files = []
         self.error = False
         self.download = [
-            'fastq-dump', self.accession, '--split-3', '--bzip2',
+            'fastq-dump', self.accession, '--split-3', '--gzip',
             '--outdir', self.dir
         ]
 
