@@ -11,6 +11,8 @@ import urllib
 import copy
 import logging
 import sys
+import json
+import io
 
 logging.basicConfig(
     level=logging.INFO,
@@ -28,10 +30,11 @@ class Metadata():
         self.metadata = copy.deepcopy(metadata)
         self.metadata.update(attrs)
         self.accession = accession.strip()
-        self.url = 'http://www.ncbi.nlm.nih.gov/sra/?term=%s&format=text' % (self.accession)
+        self.url = 'http://www.ncbi.nlm.nih.gov/sra/?term=%s&format=text' % (
+            self.accession)
         self.data = urllib.urlopen(self.url).read()
 
-    def FormatDate(yyyy=None, mm=None, dd=None):
+    def __format_date(yyyy=None, mm=None, dd=None):
         '''
         This method stringify the date tuple using a standard format:
           YYYY-MM-DD or
@@ -49,6 +52,16 @@ class Metadata():
             else:
                 date = '%04d' % (yyyy)
         return date
+
+    def save_metadata(self, dir):
+        '''
+        Writes self.metadata as meta.json in dir
+        :param: dir
+        :return: True
+        '''
+        f = open('%s/meta.json' % dir, 'w')
+        f.write(json.dumps(self.metadata, ensure_ascii=False))
+        f.close()
 
     def valid_metadata(self):
         '''
@@ -80,11 +93,6 @@ class Metadata():
                 stat = attributes.split('=')
                 att = stat[0].strip('/ ').lower().replace('\'', '')
                 val = stat[1].strip('\' ').replace('\'', '\`')
-                # if att in self.metadata:
-                #
-                #     else:
-                #         metadata[att] = val
-                # else:
                 if att == 'geo_loc_name' and ':' in stat[1]:
                     self.metadata['country'] = val.split(':')[0]
                     self.metadata['region'] = val.split(':')[1]
@@ -111,7 +119,7 @@ class Metadata():
                     self.metadata['notes'] = '%s BioSample=%s, ' % (
                         self.metadata['notes'], val)
                 elif att == 'collection date':
-                    self.metadata[att] = FormatDate(*InterpretDate(val))
+                    self.metadata[att] = __format_date(*InterpretDate(val))
                     if self.metadata[att] == '':
                         _logger.warning(
                             'Date Empty: %s',

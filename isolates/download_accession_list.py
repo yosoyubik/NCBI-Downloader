@@ -75,7 +75,7 @@ def parse_args_bioproject(args):
              'Name of the file is used to identify the isolates downloaded.'
     )
     parser.add_argument(
-        '-output',
+        '-out',
         nargs=1,
         metavar=('OUTPUT'),
         required=True,
@@ -105,11 +105,18 @@ def parse_args_accessions(args):
         nargs=1,
         metavar=('PATH'),
         help='Format: [PATH]\n' +
-             '[PATH] to file containing list of ACCESSION IDs, 1 per line\n' +
+             'to file containing list of ACCESSION IDs, 1 per line\n' +
              'Name of the file is used to identify the isolates downloaded.'
     )
     parser.add_argument(
-        '-output',
+        '-o',
+        nargs=1,
+        metavar=('organism'),
+        help='Format: [ORGANISM]\n' +
+             'to assign to all isolates'
+    )
+    parser.add_argument(
+        '-out',
         nargs=1,
         metavar=('OUTPUT'),
         required=True,
@@ -118,7 +125,7 @@ def parse_args_accessions(args):
     return parser.parse_args(args)
 
 
-def download_fastq_from_list(accession_list, output):
+def download_fastq_from_list(accession_list, organism, output):
     """
     Get Fastq from list of Ids
 
@@ -127,13 +134,11 @@ def download_fastq_from_list(accession_list, output):
     """
 
     metadata = []
-    print(accession_list)
     f = open(accession_list, 'r')
-    list_folder = accession_list.split('/')[-1]
     line = 0
     n_samples = len([aux for aux in f])
     f = open(accession_list, 'r')
-    d = Path('%s/%s' % (output, list_folder))
+    d = Path('%s/%s' % (output, organism))
     dir = d.makedirs_p()
     _logger.info("Isolates to be downloaded: %s", n_samples)
     pbar = ProgressBar(
@@ -145,7 +150,8 @@ def download_fastq_from_list(accession_list, output):
         m = Metadata({
             'pre_assembled': 'no',
             'sample_type': 'isolate',
-            # 'organism: fld[head.index('ScientificName')]
+            'sample_name': accession.strip(),
+            'organism': organism,
             'pathogenic': 'yes',
             'usage_restrictions': 'public',
             'usage_delay': '0'
@@ -156,13 +162,9 @@ def download_fastq_from_list(accession_list, output):
             s.download_fastq()
             if not s.error:
                 m.metadata["file_names"] = ''.join(s.files)
-            # error_accession_list.append(download_fastq(accession, dir))
+                m.save_metadata(s.dir)
         else:
             _logger.error('Metadata not valid: %s', m.url)
-            # _logger.error('%s', '= ,'.join(
-            #     ["%s = %s" % (att, str(m.metadata[att]))
-            #       for att in m.metadata]
-            # ))
         pbar.update(i)
         i += 1
     pbar.finish()
@@ -178,11 +180,11 @@ def download_fastq_from_list(accession_list, output):
 def download_accession_list():
     # logging.basicConfig(level=logging.INFO, stream=sys.stdout)
     args = parse_args_accessions(sys.argv[1:])
-    if args.a is not None:
+    if args.a is not None and args.o is not None:
         _logger.info('Good!')
-        download_fastq_from_list(args.a[0], args.output[0])
+        download_fastq_from_list(args.a[0], args.o[0], args.out[0])
     else:
-        _logger.error('Usage: [-a PATH]')
+        _logger.error('Usage: [-a PATH] [-o ORGANISM]')
 
 
 def download_bioproject():

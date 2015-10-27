@@ -12,7 +12,7 @@ import copy
 import logging
 import sys
 from path import Path
-from subprocess import call
+from subprocess import call, PIPE
 
 logging.basicConfig(
     level=logging.INFO,
@@ -27,12 +27,12 @@ _logger = logging.getLogger(__name__)
 class Sequence(object):
 
     # Global vars for all sequences
-    _errors = {}
-    _sequence_id = 0
+    __errors = {}
+    __sequence_id = 0
 
     def __init__(self, accession, dir):
         self.accession = accession.strip()
-        self.dir = '%s/%s/' % (dir, str(self._sequence_id))
+        self.dir = '%s/%s/' % (dir, str(Sequence.__sequence_id))
         self.files = []
         self.error = False
         self.download = [
@@ -43,11 +43,11 @@ class Sequence(object):
     @property
     def errors(self):
         """ Get errors for all sequences """
-        return self._errors
+        return self.__errors
 
     @property
     def id(self):
-        return self._sequence_id
+        return self.__sequence_id
 
     def download_fastq(self):
         '''
@@ -58,23 +58,23 @@ class Sequence(object):
         '''
         try:
             Path(self.dir).makedirs_p()
-            retcode = call(self.download)
+            retcode = call(self.download, stdout=PIPE)
         except OSError as e:
             _logger.error('FastQ Failed: %s [%s]', self.accession, e)
             _logger.error('CMD: %s', self.download)
-            self._errors[self.accession] = 'FastQ Failed'
+            Sequence.__errors[self.accession] = 'FastQ Failed'
             self.error = True
         else:
             if retcode < 0:
                 _logger.error('Child was terminated by signal')
                 self.error = True
-                self._errors[self.accession] = 'Child was'\
-                                               'terminated'\
-                                               '(signal)'
+                Sequence.__errors[self.accession] = 'Child was'\
+                    'terminated'\
+                    '(signal)'
             else:
                 _logger.info('Success: %s', self.accession)
                 self.files = [
-                    f.abspath() for f in Path(self.dir).files
+                    f.abspath() for f in Path(self.dir).files()
                 ]
-        finally:
-            self._sequence_id += 1
+                Sequence.__sequence_id += 1
+                # self.__sequence_id += 1

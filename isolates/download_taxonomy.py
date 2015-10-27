@@ -70,7 +70,7 @@ def parse_args_taxonomy(args):
         help='Tax ID from ENA data archive and organism associated'
     )
     parser.add_argument(
-        '-output',
+        '-out',
         nargs=1,
         metavar=('OUTPUT'),
         required=True,
@@ -128,7 +128,7 @@ def download_species(species, output):
             m = Metadata({
                 'pre_assembled': 'no',
                 'sample_type': 'isolate',
-                # 'organism: fld[head.index('ScientificName')]
+                'organism': specie.["name"],
                 'pathogenic': 'yes',
                 'usage_restrictions': 'public',
                 'usage_delay': '0'
@@ -139,7 +139,6 @@ def download_species(species, output):
                 s.download_fastq()
                 if accession not in s.errors:
                     m.metadata['file_names'] = ''.join(s.files)
-                # error_accession_list.append(download_fastq(accession, dir))
             else:
                 _logger.error('Metadata not valid: %s', m.accession)
                 _logger.error('Metadata not valid: %s', m.url)
@@ -170,7 +169,7 @@ def download_taxonomy():
     if args.t is not None:
         download_species(
             [{"name": args.t[0], "tax_id": args.t[1]}],
-            args.output[0]
+            args.out[0]
         )
     else:
         _logger.error('Usage: [-t TAXID ORGANISM]')

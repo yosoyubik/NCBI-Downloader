@@ -29,15 +29,26 @@ source env/bin/activate
 ```
 This will install the python dependencies and create two entry points:
 * download-taxonomy
-        usage: download-taxonomy [-h] [-v] [-t TAXID ORGANISM] -output OUTPUT
+        usage: download-taxonomy [-h] [-v] [-t TAXID ORGANISM] -out OUTPUT
 * download-accession-list
-        usage: download-accession-list [-h] [-v] [-a BIOPROJECTID ORGANISM PATH] -output OUTPUT
+    usage: download-accession-list [-h] [-v] [-a PATH] [-o organism] -out OUTPUT
+
+    Download script of isolates fromENA taxonomy or Accession list
+
+    optional arguments:
+      -h, --help     show this help message and exit
+      -v, --version  show program's version number and exit
+      -a PATH        Format: [PATH] to file containing list of ACCESSION IDs, 1
+                     per line Name of the file is used to identify the isolates
+                     downloaded.
+      -o organism    Format: [ORGANISM] to assign to all isolates
+      -out OUTPUT    Path to save isolates
 
 
 Examples
 =======
 download-taxonomy -t Lysteria 1639 -output myDir
-download-accession-list -a input/295367.txt -output mydir
+download-accession-list -a input/295367.txt -o ORGANISM -out mydir
 
 Note
 ====
