@@ -1,36 +1,33 @@
-=============
+****************************************
 Download Taxonomy/Accession
-=============
+****************************************
 
-
-Add a short description here!
-
-
-Description
-===========
 
 Download isolates from a taxonomy tree from ENA or from a list of accessions.
 
 Development
 ===========
-```bash
-./setup.sh TEMPORARY_DOWNLOAD_PATH
-```
+
 This will install the SRA tool kit if not found in the USER's path and set up
-the download folder for temporary *.SRA files used by fastq-dump
+the download folder for temporary *.SRA files used by fastq-dump::
+    ./setup.sh TEMPORARY_DOWNLOAD_PATH
 
-After you should activate the new environment by typing:
-```bash
-source env/bin/activate
-```
+After you should activate the new environment by typing::
+    source env/bin/activate
+    ./install.sh
 
-```bash
-./install.sh
-```
 This will install the python dependencies and create two entry points:
-* download-taxonomy
-        usage: download-taxonomy [-h] [-v] [-t TAXID ORGANISM] -out OUTPUT
-* download-accession-list
+* download-taxonomy::
+    usage: download-taxonomy [-h] [-v] [-t TAXID ORGANISM] -out OUTPUT
+
+    Download script of isolates fromENA taxonomy or Accession list
+
+    optional arguments:
+      -h, --help         show this help message and exit
+      -v, --version      show program's version number and exit
+      -t TAXID ORGANISM  Tax ID from ENA data archive and organism associated
+      -out OUTPUT        Path to save isolates* download-accession-list
+* download-accession-list::
     usage: download-accession-list [-h] [-v] [-a PATH] [-o organism] -out OUTPUT
 
     Download script of isolates fromENA taxonomy or Accession list
@@ -47,8 +44,8 @@ This will install the python dependencies and create two entry points:
 
 Examples
 =======
-download-taxonomy -t Lysteria 1639 -output myDir
-download-accession-list -a input/295367.txt -o ORGANISM -out mydir
+* download-taxonomy -t Lysteria 1639 -output myDir
+* download-accession-list -a input/295367.txt -o ORGANISM -out mydir
 
 Note
 ====
