@@ -19,13 +19,13 @@ command -v fastq-dump >/dev/null 2>&1 || {
     if [[ "${OSTYPE}" == 'linux'* ]]; then
         wget ${SRAURL}
         tar -xzf sratoolkit.current-centos_linux64.tar.gz
-        ln -s ./sra-toolkit/fastq-dump env/bin/fast-dump
+        ln -s ./sra-toolkit/fastq-dump env/bin/fastq-dump
     elif [[ "${OSTYPE}" == 'darwin'* ]]; then
         brew install homebrew/science/sratoolkit
     else
         curl -L ${SRAURL} | bash
         tar -xzf sratoolkit.current-centos_linux64.tar.gz
-        ln -s ./sra-toolkit/fastq-dump bin/fast-dump
+        ln -s ./sra-toolkit/fastq-dump env/bin/fastq-dump
     fi
     # vdb-config --set repository/user/main/public/root='tempSRA'
     vdb-config --set repository/user/main/public/root=${TEMPDOWNLOAD}
