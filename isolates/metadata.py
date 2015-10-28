@@ -53,6 +53,76 @@ class Metadata():
                 date = '%04d' % (yyyy)
         return date
 
+    def __interpret_date(val):
+        '''
+        This function will try to interpret the
+        :param: val Date
+        :return: Tuple of integers: (yyyy, mm, dd) or (None, None, None) if
+            value not identified
+            >>> InterpretDate('Feb-30-2014')
+            (2014, 2, 30)
+            >>> InterpretDate('Feb-2014')
+            ('2014', 2, None)
+        '''
+        month = 'Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec'.split()
+        yyyy, mm, dd = None, None, None
+        if '/' in val:
+            # American style
+            try:
+                mm, dd, yyyy = val.split('/')
+            except:
+                pass
+        elif '-' in val:
+            # European style
+            tmp = val.split('-')
+            lens = [len(x) for x in tmp]
+            lenl = len(lens)
+            if lenl == 3:
+                if lens[2] == 4:
+                    yyyy = tmp[2]
+                    if tmp[1] in month and lens[0] <= 2:
+                        mm = month.index(tmp[1]) + 1
+                        dd = tmp[0]
+                    elif tmp[0] in month and lens[1] <= 2:
+                        mm = month.index(tmp[0]) + 1
+                        dd = tmp[1]
+                    elif lens[0] <= 2 and lens[1] <= 2:
+                        mm = tmp[1]
+                        dd = tmp[0]
+                elif lens[0] == 4:
+                    yyyy = tmp[0]
+                    if tmp[1] in month and lens[2] <= 2:
+                        mm = month.index(tmp[1]) + 1
+                        dd = tmp[2]
+                    elif lens[1] <= 2 and lens[2] <= 2:
+                        mm = tmp[1]
+                        dd = tmp[2]
+                elif lens[0] <= 2 and lens[2] == 2 and tmp[1] in month:
+                    yyyy, mm, dd = '20' + \
+                        tmp[2], month.index(tmp[1]) + 1, tmp[0]
+            elif lenl == 2:
+                if lens[0] == 4:
+                    yyyy = tmp[0]
+                    if tmp[1] in month:
+                        mm = month.index(tmp[1]) + 1
+                    elif lens[1] <= 2:
+                        mm = tmp[1]
+                if lens[1] == 4:
+                    yyyy = tmp[1]
+                    if tmp[0] in month:
+                        mm = month.index(tmp[0]) + 1
+                    elif lens[0] <= 2:
+                        mm = tmp[0]
+                elif lens[1] == 2 and tmp[0] in month:
+                    yyyy, mm = '20' + tmp[1], month.index(tmp[0]) + 1
+                elif lens[0] == 2 and tmp[1] in month:
+                    yyyy, mm = '20' + tmp[0], month.index(tmp[1]) + 1
+        elif len(val) == 4:
+            yyyy = val
+        return (int(yyyy) if yyyy is not None else None,
+                int(mm) if mm is not None else None,
+                int(dd) if dd is not None else None)
+
     def save_metadata(self, dir):
         '''
         Writes self.metadata as meta.json in dir
@@ -119,7 +189,9 @@ class Metadata():
                     self.metadata['notes'] = '%s BioSample=%s, ' % (
                         self.metadata['notes'], val)
                 elif att == 'collection date':
-                    self.metadata[att] = __format_date(*InterpretDate(val))
+                    self.metadata[att] = self.__format_date(
+                        *self.__interpret_date(val)
+                    )
                     if self.metadata[att] == '':
                         _logger.warning(
                             'Date Empty: %s',

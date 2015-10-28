@@ -128,7 +128,7 @@ def download_species(species, output):
             m = Metadata({
                 'pre_assembled': 'no',
                 'sample_type': 'isolate',
-                'organism': specie.["name"],
+                'organism': specie["name"],
                 'pathogenic': 'yes',
                 'usage_restrictions': 'public',
                 'usage_delay': '0'
