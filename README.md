@@ -1,12 +1,12 @@
---------------------------------------------------------------------------------
 
-Download Taxonomy/Accession
 
---------------------------------------------------------------------------------
+# Download Taxonomy/Accession
+
+
 
 Download isolates from a taxonomy tree from ENA or from a list of accessions.
 
-# Development
+## Development
 This will install the SRA tool kit if not found in the USER's path and set up<br>the download folder for temporary *.SRA files used by fastq-dump::
 
 ```
@@ -41,9 +41,9 @@ This will install the python dependencies and create two entry points
 
 Each of this programs wil store each sequence inside a folder along with a metadata file.
 
-# Examples
+## Examples
 - download-taxonomy -t Lysteria 1639 -out my_folder
 - download-accession-list -a Salmonella.txt -o Salmonella -out my_folder
 
-# Note
+## Note
 This project has been set up using PyScaffold 2.4.2. For details and usage<br>information on PyScaffold see [http://pyscaffold.readthedocs.org/](http://pyscaffold.readthedocs.org/).
