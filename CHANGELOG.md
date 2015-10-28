@@ -2,6 +2,8 @@
 Changelog
 =========
 
+# http://keepachangelog.com
+
 Version 0.1
 ===========
 
