@@ -23,10 +23,10 @@ This will install the python dependencies and create two entry points
         Download script of isolates fromENA taxonomy or Accession list
         optional arguments:
           -h, --help         show this help message and exit
-          -v, --version      show program's version number and exit
+          -v, --version      show version number and exit
           -t TAXID ORGANISM  Tax ID from ENA data archive and organism associated
           -out OUTPUT        Path to store sequences and metadata
-  ```
+    ```
 
 - download-accession-list::
     ```bash
@@ -34,11 +34,11 @@ This will install the python dependencies and create two entry points
         Download script of isolates fromENA taxonomy or Accession list
         optional arguments:
           -h, --help     show this help message and exit
-          -v, --version  show program's version number and exit
+          -v, --version  show version number and exit
           -a PATH        [PATH] to file containing list of ACCESSION IDs, 1 per line
           -o organism    This organism will be assigned to the metadata JSON file
           -out OUTPUT    Path to store sequences and metadata
-  ```
+    ```
 
 Each of this programs will store each sequence inside a folder along with a metadata file.
 
