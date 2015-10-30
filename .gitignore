@@ -64,6 +64,7 @@ test
 tempSRA
 myDir
 testPrueba
+input
 
 # Virtual environment
 bin

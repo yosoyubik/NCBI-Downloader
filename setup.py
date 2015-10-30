@@ -19,6 +19,5 @@ def setup_package():
           tests_require=['pytest_cov', 'pytest'],
           use_pyscaffold=True)
 
-
 if __name__ == "__main__":
     setup_package()

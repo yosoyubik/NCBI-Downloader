@@ -5,7 +5,6 @@
 '''
 
 from source import ontology, platforms, location_hash
-from template import metadata, mandatory_fields
 import re
 import urllib
 import copy
@@ -31,8 +30,11 @@ class Sequence(object):
     __sequence_id = 0
 
     def __init__(self, accession, dir):
+        if accession == '':
+            raise ValueError('Accession can not be empty')
         self.accession = accession.strip()
         self.dir = '%s/%s/' % (dir, str(Sequence.__sequence_id))
+        Path(self.dir).makedirs_p()
         self.files = []
         self.error = False
         self.download = [
@@ -43,11 +45,19 @@ class Sequence(object):
     @property
     def errors(self):
         """ Get errors for all sequences """
-        return self.__errors
+        return Sequence.__errors
+
+    @errors.setter
+    def errors(self, value):
+        Sequence.__errors[self.accession] = value
 
     @property
     def id(self):
-        return self.__sequence_id
+        return Sequence.__sequence_id
+
+    @id.setter
+    def id(self, value):
+        Sequence.__sequence_id += 1
 
     def download_fastq(self):
         '''

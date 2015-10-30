@@ -5,7 +5,7 @@
 '''
 
 from source import ontology, platforms, location_hash
-from template import metadata, mandatory_fields
+from template import metadata, default
 import re
 import urllib
 import copy
@@ -24,15 +24,48 @@ logging.basicConfig(
 _logger = logging.getLogger(__name__)
 
 
-class Metadata():
+class Metadata(object):
 
-    def __init__(self, attrs, accession):
+    def __init__(self, accession, json=default):
         self.metadata = copy.deepcopy(metadata)
-        self.metadata.update(attrs)
-        self.accession = accession.strip()
+        self.metadata.update(json["seed"])
+        if self.metadata['sample_name'] == 'ACCESSION':
+            self.metadata['sample_name'] = accession.strip()
         self.url = 'http://www.ncbi.nlm.nih.gov/sra/?term=%s&format=text' % (
-            self.accession)
+            accession.strip())
         self.data = urllib.urlopen(self.url).read()
+        self.mandatory = json['mandatory']
+        self.sample_accession = ''
+        self.accession = ''
+
+    def valid_metadata(self):
+        '''
+        Checks if metadata is valid
+        :return: True if all mandatory fields are not ''
+        '''
+        for i in self.mandatory:
+            if self.metadata[i] == '':
+                return False
+                break
+        return True
+
+    def save_metadata(self, dir):
+        '''
+        Writes self.metadata as meta.json in dir
+        :param: dir
+        :return: True
+        '''
+        f = open('%s/meta.json' % dir, 'w')
+        f.write(json.dumps(self.metadata, ensure_ascii=False))
+        f.close()
+        return True
+
+    def update_files(self, files):
+        '''
+        Checks if metadata is valid
+        :return: True if all mandatory fields are not ''
+        '''
+        self.metadata['files_names'] = files
 
     def __format_date(yyyy=None, mm=None, dd=None):
         '''
@@ -123,39 +156,14 @@ class Metadata():
                 int(mm) if mm is not None else None,
                 int(dd) if dd is not None else None)
 
-    def save_metadata(self, dir):
-        '''
-        Writes self.metadata as meta.json in dir
-        :param: dir
-        :return: True
-        '''
-        f = open('%s/meta.json' % dir, 'w')
-        f.write(json.dumps(self.metadata, ensure_ascii=False))
-        f.close()
-
-    def valid_metadata(self):
-        '''
-        Checks if metadata is valid
-        :return: True if all mandatory fields are not ''
-        '''
-        for i in mandatory_fields:
-            if self.metadata[i] == '':
-                return False
-                break
-        return True
-
-    def update_files(self, files):
-        '''
-        Checks if metadata is valid
-        :return: True if all mandatory fields are not ''
-        '''
-        self.metadata['files_names'] = files
-
     def update_attributes(self):
         '''
         XXX
         :return: accessionid of non identified sources
         '''
+        match = re.findall(r'Run #1: (.+)\n', self.data)
+        for answer in match:
+            self.accession = answer.split(',')[0]
 
         match = re.findall(r'Sample Attributes: (.+)\n', self.data)
         for answer in match:
@@ -190,7 +198,7 @@ class Metadata():
                         self.metadata['notes'], val)
                 elif att == 'collection date':
                     self.metadata[att] = self.__format_date(
-                        *self.__interpret_date(val)
+                        *InterpretDate(val)
                     )
                     if self.metadata[att] == '':
                         _logger.warning(
@@ -272,3 +280,41 @@ class Metadata():
         match = re.findall(r'Library Layout: (.+)\n', self.data)
         for answer in match:
             self.metadata['sequencing_type'] = answer.split(',')[0].lower()
+
+        match = re.findall(r'Sample Accession: (.+)\n', self.data)
+        for answer in match:
+            self.sample_accession = answer
+
+
+class MetadataBioSample(Metadata):
+    def __init__(self, accession, json=default):
+        super(MetadataBioSample, self).__init__(accession, json)
+        # ncbi = 'http://www.ncbi.nlm.nih.gov/biosample/'
+        # self.url = '%s?term=%s&report=full&format=text' % (
+        #     ncbi, accession.strip())
+        # self.data = urllib.urlopen(self.url).read()
+        # self.organism = copy.deepcopy(metadata)
+
+    def update_biosample_attributes(self):
+        ncbi = 'http://www.ncbi.nlm.nih.gov/biosample/'
+        url = '%s?term=%s&report=full&format=text' % (
+            ncbi, self.sample_accession)
+        data = urllib.urlopen(url).read()
+
+        match = re.findall(r'Organism: (.+)\n', data)
+        if match != []:
+            self.metadata['organism'] = match[0]
+        else:
+            self.metadata['organism'] = ''
+
+        match = re.findall(r'Sample name: (.+)', data)
+        if match == []:
+            self.metadata['sample_name'] = self.accession.strip()
+        else:
+            self.metadata['sample_name'] = match[0].split(';')[0]
+
+        # match = re.findall(r'SRA: (.+)', data)
+        # if match == []:
+        #     self.accession = self.accession.strip()
+        # else:
+        #     self.accession = match[0].split(';')[0]

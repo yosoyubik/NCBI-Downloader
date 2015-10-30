@@ -5,7 +5,7 @@ metadata = {
     "sequencing_platform": "",
     "sequencing_type": "",
     "pre_assembled": "",
-    # "sample_type": "",
+    "sample_type": "",
     "organism": "",
     "strain": "",
     "subtype": {},
@@ -29,13 +29,22 @@ metadata = {
     "batch": "true"
 }
 
-mandatory_fields = [
-    # "file_names",
-    "pre_assembled",
-    "sequencing_platform",
-    "sequencing_type",
-    "pre_assembled",
-    "country",
-    "isolation_source",
-    "collection_date"
-]
+default = {
+    "mandatory": [
+        "pre_assembled",
+        "sequencing_platform",
+        "sequencing_type",
+        "pre_assembled",
+        "country",
+        "isolation_source",
+        "collection_date"
+    ],
+    "seed": {
+        "pre_assembled": "no",
+        "sample_type": "isolate",
+        "organism": "",
+        "pathogenic": "yes",
+        "usage_restrictions": "public",
+        "usage_delay": "0"
+    }
+}
