@@ -7,6 +7,11 @@ Changelog
 Version 0.1
 ===========
 
-- Feature A added
-- FIX: nasty bug #1729 fixed
-- add your changes here!
+- Initial version
+
+Version 0.2
+===========
+
+- JSON file included to select what metadata attributes are mandatory
+- organism removed from command line option (extracted from JSON)
+- Classes for NCBI and BioSample Metadata
