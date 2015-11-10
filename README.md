@@ -4,8 +4,9 @@
 Download isolates from a taxonomy tree from ENA or from a list of accessions.
 
 ## Usage
-This will install the SRA tool kit if not found in the USER's path and set up<br>
-the download folder for temporary *.SRA files used by fastq-dump::
+This will install the SRA tool kit if not found in the USER's path and set up the download folder for temporary *.SRA files used by fastq-dump
+
+(make sure you select a TEMPORARY_DOWNLOAD_PATH with enough space available if you plan to download many isolates):
 
 ```bash
 bash setup.sh TEMPORARY_DOWNLOAD_PATH
@@ -15,7 +16,7 @@ bash install.sh
 
 If you are using Anaconda's python distribution:
 
-``bash
+```bash
 bash setup_conda.sh TEMPORARY_DOWNLOAD_PATH
 source activate env
 bash install.sh
@@ -55,11 +56,45 @@ This will install the python dependencies and create two entry points
 Each of this programs will store each sequence inside a folder along with a metadata file.
 
 ## Examples
-- download-taxonomy -t 1639 -out my_folder -m meta.json
-- download-accession-list -a Salmonella.txt -m meta.json -out my_folder
-
+```bash
+download-taxonomy -t 1639 -out my_folder -m meta.json
+download-accession-list -a Salmonella.txt -m meta.json -out my_folder
+```
 ## Metadata
-In order to capture the required metadata, a file should be provided with the
+This is the metadata attached to each of the download sequences:
+```json
+metadata = {
+    "sample_name": "",
+    "group_name": "",
+    "file_names": "",
+    "sequencing_platform": "",
+    "sequencing_type": "",
+    "pre_assembled": "",
+    "sample_type": "",
+    "organism": "",
+    "strain": "",
+    "subtype": {},
+    "country": "",
+    "region": "",
+    "city": "",
+    "zip_code": "",
+    "longitude": "",
+    "latitude": "",
+    "location_note": "",
+    "isolation_source": "",
+    "source_note": "",
+    "pathogenic": "",
+    "pathogenicity_note": "",
+    "collection_date": "",
+    "collected_by": "",
+    "usage_restrictions": "",
+    "release_date": "",
+    "email_address": "",
+    "notes": "",
+    "batch": "true"
+}
+```
+In order to capture the required metadata, a file can be provided with the
 following structure:
 
 meta.json
@@ -82,7 +117,7 @@ meta.json
 }
 ```
 If meta.json is not provided, these values are used by default. The result metadata will contain
-the exact same values as provided in the meta.json file.
+the exact same seed values as provided in the meta.json file.
 If the downloaded metadata doesn't contain some of the mandatory files, this isolate won't be downloaded.
 
 ## Note
