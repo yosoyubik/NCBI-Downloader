@@ -10,7 +10,7 @@ SRAURL="ftp-trace.ncbi.nlm.nih.gov/sra/sdk/current/sratoolkit.current-centos_lin
 # Path where temporaru SRA files will be stored
 TEMPDOWNLOAD=$1
 # Creates a virtual environment
-virtualenv env
+conda-env create -n env python=2.7
 # Install SRA toolkit
 command -v fastq-dump >/dev/null 2>&1 || {
     echo 'Installing sratoolkit...'
@@ -19,7 +19,7 @@ command -v fastq-dump >/dev/null 2>&1 || {
     if [[ "${OSTYPE}" == 'linux'* ]]; then
         wget ${SRAURL}
         tar -xzf sratoolkit.current-centos_linux64.tar.gz
-        ln -s ./sra-toolkit/fastq-dump env/bin/fastq-dump
+        ln -s ./sra-toolkit/fastq-dump ~/.conda/envs/my_env/bin/fastq-dump
     elif [[ "${OSTYPE}" == 'darwin'* ]]; then
         brew install homebrew/science/sratoolkit
     else
@@ -28,7 +28,6 @@ command -v fastq-dump >/dev/null 2>&1 || {
         ln -s ./sra-toolkit/fastq-dump env/bin/fastq-dump
     fi
     # vdb-config --set repository/user/main/public/root='tempSRA'
-    vdb-config --set repository/user/main/public/root=${TEMPDOWNLOAD}
 }
 
 vdb-config --set repository/user/main/public/root=${TEMPDOWNLOAD}

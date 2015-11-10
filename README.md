@@ -8,9 +8,17 @@ This will install the SRA tool kit if not found in the USER's path and set up<br
 the download folder for temporary *.SRA files used by fastq-dump::
 
 ```bash
-./setup.sh TEMPORARY_DOWNLOAD_PATH
+bash setup.sh TEMPORARY_DOWNLOAD_PATH
 source env/bin/activate
-./install.sh
+bash install.sh
+```
+
+If you are using Anaconda's python distribution:
+
+``bash
+bash setup_conda.sh TEMPORARY_DOWNLOAD_PATH
+source activate env
+bash install.sh
 ```
 
 This will install the python dependencies and create two entry points
