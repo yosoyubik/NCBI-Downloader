@@ -198,7 +198,7 @@ class Metadata(object):
                         self.metadata['notes'], val)
                 elif att == 'collection date':
                     self.metadata[att] = self.__format_date(
-                        *InterpretDate(val)
+                        *self.__interpret_date(val)
                     )
                     if self.metadata[att] == '':
                         _logger.warning(
