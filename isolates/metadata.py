@@ -3,9 +3,6 @@
 '''
 
 '''
-
-from source import ontology, platforms, location_hash
-from template import metadata, default
 import re
 import urllib
 import copy
@@ -13,7 +10,12 @@ import logging
 import sys
 import json
 import io
+import geocoder
+from datetime import datetime
+from source import ontology, platforms, location_hash
+from template import metadata, default
 
+# Setup of what?
 logging.basicConfig(
     level=logging.INFO,
     stream=sys.stdout,
@@ -25,7 +27,7 @@ _logger = logging.getLogger(__name__)
 
 
 class Metadata(object):
-
+    '''  '''
     def __init__(self, accession, json=default):
         self.metadata = copy.deepcopy(metadata)
         self.metadata.update(json["seed"])
@@ -131,8 +133,12 @@ class Metadata(object):
                         mm = tmp[1]
                         dd = tmp[2]
                 elif lens[0] <= 2 and lens[2] == 2 and tmp[1] in month:
-                    yyyy, mm, dd = '20' + \
-                        tmp[2], month.index(tmp[1]) + 1, tmp[0]
+                    yearnow = datetime.now().year
+                    yyyy = int(str(yearnow)[:-2] + tmp[2])
+                    if yyyy > yearnow:
+                        yyyy = int(str(yearnow-100)[:-2] + tmp[2])
+                    mm = month.index(tmp[1]) + 1
+                    dd = tmp[0]
             elif lenl == 2:
                 if lens[0] == 4:
                     yyyy = tmp[0]
@@ -155,6 +161,68 @@ class Metadata(object):
         return (int(yyyy) if yyyy is not None else None,
                 int(mm) if mm is not None else None,
                 int(dd) if dd is not None else None)
+
+    def __interpret_loc(self, val):
+        '''  '''
+        geo_dict = {
+            'country': '',
+            'region': '',
+            'city': '',
+            'zip_code': '',
+            'longitude': '',
+            'latitude': '',
+            'location_note': ''
+        }
+        type_map = {
+            'country': 'country',
+            'postal_code': 'zip_code',
+            'administrative_area_level_1': 'region',
+            'locality': 'city'
+        }
+        val = val.lower()
+        if val not in location_hash.keys():
+            try:
+                g = geocoder.google(val)
+            except Exception, e:
+                _logger.warning(
+                    'Geocoder error %s', self.accession
+                )
+                location_hash[val] = ('', '', '', '', val)
+            else:
+                geo_dict['longitude'] = g.lng
+                geo_dict['latitude'] = g.lat
+                geo_dict['location_note'] = g.location
+                try:
+                    results = g.content['results'][0]
+                    for x in results['address_components']:
+                        a_type = x['types'][0]
+                        if a_type in type_map.values():
+                            m_type = type_map[a_type]
+                            geo_dict[m_type] = x['long_name']
+                except:
+                    try:
+                        a_tmp = g.address.split(',')
+                        if len(address_tmp) > 2:
+                            geo_dict['city'] = a_tmp[0]
+                            geo_dict['region'] = a_tmp[-2]
+                            geo_dict['country'] = a_tmp[-1]
+                        elif len(address_tmp) == 2:
+                            geo_dict['city'] = a_tmp[0]
+                            geo_dict['country'] = a_tmp[-1]
+                        elif len(address_tmp) == 1:
+                            geo_dict['country'] = a_tmp[0]
+                    except:
+                        pass
+                    else:
+                        try:
+                            geo_dict['zip_code'] = int(
+                                geo_dict['city'].split(' ')[0]
+                            )
+                        except:
+                            pass
+                finally:
+                    location_hash[val] = geo_dict
+        self.metadata.update(geo_dict)
 
     def update_attributes(self):
         '''
@@ -184,10 +252,12 @@ class Metadata(object):
                 att = stat[0].strip('/ ').lower().replace('\'', '')
                 val = stat[1].strip('\' ').replace('\'', '\`')
                 if att == 'geo_loc_name' and ':' in stat[1]:
-                    self.metadata['country'] = val.split(':')[0]
-                    self.metadata['region'] = val.split(':')[1]
+                    self.__interpret_loc(val)
+                    # self.metadata['country'] = val.split(':')[0]
+                    # self.metadata['city'] = val.split(':')[1]
                 elif att == 'geo_loc_name':
-                    self.metadata['country'] = val
+                    self.__interpret_loc(val)
+                    # self.metadata['country'] = val
                 elif att == 'serovar':
                     self.metadata['subtype']['serovar'] = val
                 elif att == 'mlst':
@@ -206,9 +276,8 @@ class Metadata(object):
                         )
                     self.metadata['source_note'] = val
                 elif att == 'BioSample':
-                    self.metadata['notes'] = '%s BioSample=%s, ' % (
-                        self.metadata['notes'], val)
-                elif att == 'collection date':
+                    self.metadata['biosample'] = val
+                elif att == 'collection_date':
                     self.metadata[att] = self.__format_date(
                         *self.__interpret_date(val)
                     )
@@ -218,76 +287,27 @@ class Metadata(object):
                             val, self.accession
                         )
                 elif att == 'geographic location':
-                    geo_dict = {
-                        'country': '',
-                        'region': '',
-                        'city': '',
-                        'zip_code': '',
-                        'longitude': '',
-                        'latitude': '',
-                        'location_note': ''
-                    }
-                    val = val.lower()
-                    if val not in location_hash.keys():
-                        try:
-                            g = geocoder.google(val)
-                        except Exception, e:
-                            _logger.warning(
-                                'Geocoder error %s', self.accession
-                            )
-                            location_hash[val] = ('', '', '', '', val)
-                        else:
-                            try:
-                                results = g.content['results'][0]
-                                for x in results['address_components']:
-                                    type = x['types'][0]
-                                    type_map = {
-                                        'country': 'country',
-                                        'postal_code': 'zip_code',
-                                        'administrative_area_level_1':
-                                            'region',
-                                        'locality': city
-                                    }
-                                    if type in type_map.values():
-                                        m_type = type_map[type]
-                                        geo_dict[m_type] = x['long_name']
-                            except:
-                                try:
-                                    a_tmp = g.address.split(',')
-                                    if len(address_tmp) > 2:
-                                        geo_dict['city'] = a_tmp[0]
-                                        geo_dict['region'] = a_tmp[-2]
-                                        geo_dict['country'] = a_tmp[-1]
-                                    elif len(address_tmp) == 2:
-                                        geo_dict['city'] = a_tmp[0]
-                                        geo_dict['country'] = a_tmp[-1]
-                                    elif len(address_tmp) == 1:
-                                        geo_dict['country'] = a_tmp[0]
-                                except:
-                                    pass
-                                else:
-                                    try:
-                                        geo_dict['zip_code'] = int(
-                                            geo_dict['city'].split(' ')[0]
-                                        )
-                                    except:
-                                        pass
-                            finally:
-                                geo_dict['longitude'] = g.lng
-                                geo_dict['latitude'] = g.lat
-                                geo_dict['location_note'] = g.location
-                    self.metadata.update(geo_dict)
+                    self.__interpret_loc(val)
                 elif att in self.metadata:
                     self.metadata[att] = val
                 else:
-                    self.metadata['notes'] = '%s %s: %s, ' % (
+                    self.metadata['notes'] = '%s %s: %s,' % (
                         self.metadata['notes'], att, val)
 
-        match = re.findall(r'Sample Attributes: (.+)\n', self.data)
-        for answer in match:
-            self.metadata['sequencing_platform'] = platforms.get(
-                answer.lower(), 'unknown'
-            )
+        match1 = re.findall(r'Sample Attributes: (.+)\n', self.data)
+        match2 = re.findall(r'Platform Name: (.+)\n', self.data)
+        if match1:
+            for answer in match1:
+                self.metadata['sequencing_platform'] = platforms.get(
+                    answer.lower(), 'unknown'
+                )
+        elif match2:
+            for answer in match2:
+                self.metadata['sequencing_platform'] = platforms.get(
+                    answer.lower(), 'unknown'
+                )
+        else:
+            self.metadata['sequencing_platform'] = 'unknown'
 
         match = re.findall(r'Library Layout: (.+)\n', self.data)
         for answer in match:

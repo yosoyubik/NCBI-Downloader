@@ -7,19 +7,18 @@ platforms = {
 }
 # 'preset': (country, region, city, zip, longitude, latitude, note)
 location_hash = {
-    'missing': ('', '', '', '', '', '', ''),
-    'unknown': ('', '', '', '', '', '', ''),
-    'na':      ('', '', '', '', '', '', ''),
-    'egypt':   ('Egypt', '', '', '', 30.7956597, 26.8357675, 'egypt'),
-    'usa:or':  (
-        'United States',
-        'Oregon',
-        '',
-        '',
-        -120.5380993,
-        44.1419049,
-        'USA:OR'
-    )
+    'missing': {'country': '', 'region': '', 'city': '', 'zip_code': '',
+                'longitude': '', 'latitude': '', 'location_note': ''},
+    'unknown': {'country': '', 'region': '', 'city': '', 'zip_code': '',
+                'longitude': '', 'latitude': '', 'location_note': ''},
+    'na':      {'country': '', 'region': '', 'city': '', 'zip_code': '',
+                'longitude': 30.7956597, 'latitude': 26.8357675,
+                'location_note': 'egypt'},
+    'egypt':   {'country': 'Egypt', 'region': '', 'city': '', 'zip_code': '',
+                'longitude': '', 'latitude': '', 'location_note': ''},
+    'usa:or':  {'country': 'United States', 'region': 'Oregon', 'city': '',
+                'zip_code': '', 'longitude': -120.5380993,
+                'latitude': 44.1419049, 'location_note': 'USA:OR'}
 }
 
 ontology = [
