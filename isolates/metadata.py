@@ -243,8 +243,8 @@ class Metadata(object):
         #   the SRR identifier nor the biosample ID as would be preferred, and
         #   necessary for later annotation of the MLST to the data.
         match = re.findall(r'Run #1: (.+)\n', self.data)
-        for answer in match:
-            self.accession = answer.split(',')[0]
+        if match:
+            self.accession = match[0].split(',')[0]
 
         match = re.findall(r'Sample Attributes: (.+)\n', self.data)
         for answer in match:
@@ -252,13 +252,8 @@ class Metadata(object):
                 stat = attributes.split('=')
                 att = stat[0].strip('/ ').lower().replace('\'', '')
                 val = stat[1].strip('\' ').replace('\'', '\`')
-                if att == 'geo_loc_name' and ':' in stat[1]:
+                if att == 'geo_loc_name':
                     self.__interpret_loc(val)
-                    # self.metadata['country'] = val.split(':')[0]
-                    # self.metadata['city'] = val.split(':')[1]
-                elif att == 'geo_loc_name':
-                    self.__interpret_loc(val)
-                    # self.metadata['country'] = val
                 elif att == 'serovar':
                     self.metadata['subtype']['serovar'] = val
                 elif att == 'mlst':
@@ -295,28 +290,21 @@ class Metadata(object):
                     self.metadata['notes'] = '%s %s: %s,' % (
                         self.metadata['notes'], att, val)
 
-        match1 = re.findall(r'Sample Attributes: (.+)\n', self.data)
-        match2 = re.findall(r'Platform Name: (.+)\n', self.data)
-        if match1:
-            for answer in match1:
-                self.metadata['sequencing_platform'] = platforms.get(
-                    answer.lower(), 'unknown'
-                )
-        elif match2:
-            for answer in match2:
-                self.metadata['sequencing_platform'] = platforms.get(
-                    answer.lower(), 'unknown'
-                )
+        match = re.findall(r'Platform Name: (.+)\n', self.data)
+        if match:
+            self.metadata['sequencing_platform'] = platforms.get(
+                match[0].lower(), 'unknown'
+            )
         else:
             self.metadata['sequencing_platform'] = 'unknown'
 
         match = re.findall(r'Library Layout: (.+)\n', self.data)
-        for answer in match:
-            self.metadata['sequencing_type'] = answer.split(',')[0].lower()
+        if match:
+            self.metadata['sequencing_type'] = match[0].split(',')[0].lower()
 
         match = re.findall(r'Sample Accession: (.+)\n', self.data)
-        for answer in match:
-            self.sample_accession = answer
+        if match:
+            self.sample_accession = match[0]
 
 
 class MetadataBioSample(Metadata):
@@ -335,16 +323,16 @@ class MetadataBioSample(Metadata):
         data = urllib.urlopen(url).read()
 
         match = re.findall(r'Organism: (.+)\n', data)
-        if match != []:
-            self.metadata['organism'] = match[0]
+        if match:
+            self.metadata['organism'] = ' '.join(match[0].split()[:2])
         else:
             self.metadata['organism'] = ''
 
         match = re.findall(r'Sample name: (.+)', data)
-        if match == []:
-            self.metadata['sample_name'] = self.accession.strip()
-        else:
+        if match:
             self.metadata['sample_name'] = match[0].split(';')[0]
+        else:
+            self.metadata['sample_name'] = self.accession.strip()
 
         # match = re.findall(r'SRA: (.+)', data)
         # if match == []:
