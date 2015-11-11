@@ -119,7 +119,6 @@ def parse_args_accessions(args):
         '--preserve',
         action="store_true",
         dest="webmode",
-        metavar=('METADATA'),
         default=False,
         help='preserve any existing SRA and fastq files\n'
     )
