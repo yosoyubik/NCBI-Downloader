@@ -195,10 +195,11 @@ class Metadata(object):
                 try:
                     results = g.content['results'][0]
                     for x in results['address_components']:
-                        a_type = x['types'][0]
-                        if a_type in type_map.values():
-                            m_type = type_map[a_type]
-                            geo_dict[m_type] = x['long_name']
+                        for a_type in x['types']:
+                            if a_type in type_map:
+                                m_type = type_map[a_type]
+                                geo_dict[m_type] = x['long_name']
+                                break
                 except:
                     try:
                         a_tmp = g.address.split(',')
