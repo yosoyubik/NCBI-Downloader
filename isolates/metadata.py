@@ -69,7 +69,7 @@ class Metadata(object):
         '''
         self.metadata['files_names'] = files
 
-    def __format_date(yyyy=None, mm=None, dd=None):
+    def __format_date(self, yyyy=None, mm=None, dd=None):
         '''
         This method stringify the date tuple using a standard format:
           YYYY-MM-DD or
@@ -88,7 +88,7 @@ class Metadata(object):
                 date = '%04d' % (yyyy)
         return date
 
-    def __interpret_date(val):
+    def __interpret_date(self, val):
         '''
         This function will try to interpret the
         :param: val Date
