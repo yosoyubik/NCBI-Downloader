@@ -228,21 +228,8 @@ class Metadata(object):
 
     def update_attributes(self):
         '''
-        XXX
         :return: accessionid of non identified sources
         '''
-        # FIXME: Major problem:
-        #   sequencing platform cannot be unknown, when pre_assembled is no.
-        #   The correct answer here is Illumina.
-        #   collection date should follow our format: 1998-05-29
-        # Minor issues:
-        #   City should be Melbourrne
-        #   Region should be empty or Victoria
-        #   Organism should only be the genus species annotation, anything else
-        #   should be left out  (Enterococcus faecium)
-        #   notes contain a lot of unnecessary spaces, and it does not contain
-        #   the SRR identifier nor the biosample ID as would be preferred, and
-        #   necessary for later annotation of the MLST to the data.
         match = re.findall(r'Run #1: (.+)\n', self.data)
         if match:
             self.accession = match[0].split(',')[0]
