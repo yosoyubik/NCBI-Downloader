@@ -36,6 +36,7 @@ from isolates.sequence import Sequence
 from isolates import __version__
 
 __author__ = "Jose Luis Bellod Cisneros"
+__coauthor__ = "Martin C F Thomsen"
 __copyright__ = "Jose Luis Bellod Cisneros"
 __license__ = "none"
 
@@ -93,7 +94,6 @@ def parse_args_accessions(args):
         description="Download script of isolates from" +
                     "ENA taxonomy or Accession list")
     parser.add_argument(
-        '-v',
         '--version',
         action='version',
         version='isolates {ver}'.format(ver=__version__))
@@ -114,6 +114,14 @@ def parse_args_accessions(args):
         default=None,
         help='JSON file with seed attributes and mandatory fields\n'
     )
+    parser.add_argument(
+        '-p',
+        '--preserve',
+        action="store_true",
+        dest="preserve",
+        default=False,
+        help='preserve any existing SRA and fastq files\n'
+    )
     # parser.add_argument(
     #     '-o',
     #     nargs=1,
@@ -131,7 +139,7 @@ def parse_args_accessions(args):
     return parser.parse_args(args)
 
 
-def download_fastq_from_list(accession_list, output, json):
+def download_fastq_from_list(accession_list, output, json, preserve=False):
     """
     Get Fastq from list of Ids
 
@@ -140,51 +148,51 @@ def download_fastq_from_list(accession_list, output, json):
     """
 
     metadata = []
-    f = open(accession_list, 'r')
-    line = 0
-    n_samples = len([aux for aux in f])
-    f = open(accession_list, 'r')
-    d = Path('%s' % output)
-    dir = d.makedirs_p()
-    _logger.info("Isolates to be downloaded: %s", n_samples)
-    pbar = ProgressBar(
-        widgets=[ETA(), ' - ', Percentage(), ' : ', Bar()],
-        maxval=n_samples
-    ).start()
-    i = 0
-    for accession in f:
-        if accession == '':
-            continue
-        if json is None:
-            m = MetadataBioSample(accession)
+    with open(accession_list, 'r') as f:
+        d = Path('%s' % output)
+        dir = d.makedirs_p()
+        # Count samples in accession_list
+        n_samples = sum(1 for l in f)
+        f.seek(0)
+        _logger.info("Number of samples to download: %s", n_samples)
+        # Start progress bar
+        pbar = ProgressBar(
+            widgets = [ETA(), ' - ', Percentage(), ' : ', Bar()],
+            maxval  = n_samples
+        ).start()
+        pbar.update(0)
+        for i, l in enumerate(f):
+            accession = l.strip()
+            if accession == '': continue
+            if json is None:
+                m = MetadataBioSample(accession)
+            else:
+                m = MetadataBioSample(accession, json)
+            m.update_attributes()
+            m.update_biosample_attributes()
+            if m.valid_metadata():
+                try:
+                    s = Sequence(m.accession, dir)
+                    s.download_fastq(preserve)
+                    if not s.error:
+                        m.metadata["file_names"] = ' '.join(s.files)
+                        m.save_metadata(s.dir)
+                except ValueError, e:
+                    _logger.error(e)
+            else:
+                s = Sequence(accession, dir)
+                message = 'Metadata not valid: %s' % m.url
+                _logger.error(message)
+                s.errors = message
+            pbar.update(i)
+        pbar.finish()
+        errors = s.errors.items()
+        if errors != []:
+            _logger.info("The following accessions were not downloaded!")
+            for i in errors:
+                _logger.info('Accession %s [%s]', i[0], i[1])
         else:
-            m = MetadataBioSample(accession, json)
-        m.update_attributes()
-        m.update_biosample_attributes()
-        if m.valid_metadata():
-            try:
-                s = Sequence(m.accession, dir)
-                s.download_fastq()
-                if not s.error:
-                    m.metadata["file_names"] = ' '.join(s.files)
-                    m.save_metadata(s.dir)
-            except ValueError, e:
-                _logger.error(e)
-        else:
-            s = Sequence(accession, dir)
-            message = 'Metadata not valid: %s' % m.url
-            _logger.error(message)
-            s.errors = message
-        pbar.update(i)
-        i += 1
-    pbar.finish()
-    errors = s.errors.items()
-    if errors != []:
-        _logger.info("The following accessions were not downloaded!")
-        for i in errors:
-            _logger.info('Accession %s [%s]', i[0], i[1])
-    else:
-        _logger.info("All accessions downloaded succesfully!")
+            _logger.info("All accessions downloaded succesfully!")
 
 
 def download_accession_list():
@@ -199,7 +207,7 @@ def download_accession_list():
                 exit()
         else:
             default = None
-        download_fastq_from_list(args.a[0], args.out[0], default)
+        download_fastq_from_list(args.a[0], args.out[0], default, args.preserve)
     else:
         print('Usage: -a PATH -o ORGANISM -out PATH [-m JSON]')
 

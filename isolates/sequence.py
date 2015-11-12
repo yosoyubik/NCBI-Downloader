@@ -59,7 +59,7 @@ class Sequence(object):
     def id(self, value):
         Sequence.__sequence_id += 1
 
-    def download_fastq(self):
+    def download_fastq(self, preserve=False):
         '''
         Download Fastq associated with Accession from ENA
 
@@ -68,7 +68,11 @@ class Sequence(object):
         '''
         try:
             Path(self.dir).makedirs_p()
-            retcode = call(self.download, stdout=PIPE)
+            if (preserve and
+               any([self.accession in fp for fp in Path(self.dir).files()])):
+                retcode = 0
+            else:
+                retcode = call(self.download, stdout=PIPE)
         except OSError as e:
             _logger.error('FastQ Failed: %s [%s]', self.accession, e)
             _logger.error('CMD: %s', self.download)
