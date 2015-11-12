@@ -252,18 +252,18 @@ class Metadata(object):
                 stat = attributes.split('=')
                 att = stat[0].strip('/ ').lower().replace('\'', '')
                 val = stat[1].strip('\' ').replace('\'', '\`')
-                if att == 'geo_loc_name':
+                if att in ['geo_loc_name', 'geographic location']:
                     self.__interpret_loc(val)
                 elif att == 'serovar':
                     self.metadata['subtype']['serovar'] = val
                 elif att == 'mlst':
                     self.metadata['subtype']['mlst'] = val
-                elif att == 'isolation_source':
+                elif att in ['isolation_source', 'isolation source']:
                     found = False
                     for cat, keywords in ontology:
                         if any([x in val.lower() for x in keywords]):
                             found = True
-                            self.metadata[att] = cat
+                            self.metadata['isolation_source'] = cat
                             break
                     if not found:
                         _logger.warning(
@@ -273,19 +273,19 @@ class Metadata(object):
                     self.metadata['source_note'] = val
                 elif att == 'BioSample':
                     self.metadata['biosample'] = val
-                elif att == 'collection_date':
-                    self.metadata[att] = self.__format_date(
+                elif att in ['collection_date', 'collection date']:
+                    self.metadata['collection_date'] = self.__format_date(
                         *self.__interpret_date(val)
                     )
-                    if self.metadata[att] == '':
+                    if self.metadata['collection_date'] == '':
                         _logger.warning(
                             'Date Empty: %s',
                             val, self.accession
                         )
-                elif att == 'geographic location':
-                    self.__interpret_loc(val)
-                elif att in self.metadata:
-                    self.metadata[att] = val
+                elif att in ['collected_by', 'collected by']:
+                    self.metadata['collected_by'] = val
+                # elif att in self.metadata:
+                #     self.metadata[att] = val
                 else:
                     self.metadata['notes'] = '%s %s: %s,' % (
                         self.metadata['notes'], att, val)
@@ -305,6 +305,19 @@ class Metadata(object):
         match = re.findall(r'Sample Accession: (.+)\n', self.data)
         if match:
             self.sample_accession = match[0]
+            # Extract the BioSample ID using the SRA sample ID
+            if (not 'biosample' in self.metadata or
+                self.metadata['biosample'] == ''):
+                url = ('http://www.ncbi.nlm.nih.gov/biosample/?'
+                       'term=%s&format=text')%(self.sample_accession)
+                data = urllib.urlopen(url).read()
+                match2 = re.findall(r'Identifiers: (.+)\n', data)
+                if match2:
+                    for ent in match2.split(';'):
+                        tmp = ent.split(':')
+                        if tmp[0].strip().lower() == 'biosample':
+                            self.metadata['biosample'] = tmp[1].strip()
+                            break
 
 
 class MetadataBioSample(Metadata):
