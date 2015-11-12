@@ -313,7 +313,7 @@ class Metadata(object):
                 data = urllib.urlopen(url).read()
                 match2 = re.findall(r'Identifiers: (.+)\n', data)
                 if match2:
-                    for ent in match2.split(';'):
+                    for ent in match2[0].split(';'):
                         tmp = ent.split(':')
                         if tmp[0].strip().lower() == 'biosample':
                             self.metadata['biosample'] = tmp[1].strip()
