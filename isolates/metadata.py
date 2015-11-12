@@ -259,6 +259,8 @@ class Metadata(object):
                     self.metadata['subtype']['serovar'] = val
                 elif att == 'mlst':
                     self.metadata['subtype']['mlst'] = val
+                elif att == 'strain':
+                    self.metadata['strain'] = val
                 elif att in ['isolation_source', 'isolation source']:
                     found = False
                     for cat, keywords in ontology:
@@ -285,8 +287,6 @@ class Metadata(object):
                         )
                 elif att in ['collected_by', 'collected by']:
                     self.metadata['collected_by'] = val
-                # elif att in self.metadata:
-                #     self.metadata[att] = val
                 else:
                     self.metadata['notes'] = '%s %s: %s,' % (
                         self.metadata['notes'], att, val)
