@@ -221,8 +221,8 @@ class Metadata(object):
                             )
                         except:
                             pass
-                finally:
-                    location_hash[val] = geo_dict
+                location_hash[val] = geo_dict
+                print location_hash
         self.metadata.update(geo_dict)
 
     def update_attributes(self):
