@@ -1,5 +1,5 @@
 ''' present metadata '''
-import os, argparse, json
+import os, sys, argparse, json
 
 # Parse arguments
 parser = argparse.ArgumentParser(
