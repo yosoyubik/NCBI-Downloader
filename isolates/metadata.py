@@ -67,7 +67,7 @@ class Metadata(object):
         Checks if metadata is valid
         :return: True if all mandatory fields are not ''
         '''
-        self.metadata['files_names'] = files
+        self.metadata['file_names'] = files
 
     def __format_date(self, yyyy=None, mm=None, dd=None):
         '''

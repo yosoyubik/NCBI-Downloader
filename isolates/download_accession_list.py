@@ -175,7 +175,10 @@ def download_fastq_from_list(accession_list, output, json, preserve=False):
                     s = Sequence(m.accession, dir)
                     s.download_fastq(preserve)
                     if not s.error:
-                        m.metadata["file_names"] = ' '.join(s.files)
+                        m.metadata["file_names"] = ' '.join(
+                            [os.path.basename(sf).replace(' ','_')
+                                for sf in s.files]
+                            )
                         m.save_metadata(s.dir)
                 except ValueError, e:
                     _logger.error(e)
