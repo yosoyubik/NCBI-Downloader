@@ -32,9 +32,9 @@ class Metadata(object):
         self.metadata = copy.deepcopy(metadata)
         self.metadata.update(json["seed"])
         if self.metadata['sample_name'] == 'ACCESSION':
-            self.metadata['sample_name'] = accession.strip()
+            self.metadata['sample_name'] = accession
         self.url = 'http://www.ncbi.nlm.nih.gov/sra/?term=%s&format=text' % (
-            accession.strip())
+            accession)
         self.data = urllib.urlopen(self.url).read()
         self.mandatory = json['mandatory']
         self.sample_accession = ''
@@ -232,7 +232,7 @@ class Metadata(object):
         '''
         match = re.findall(r'Run #1: (.+)\n', self.data)
         if match:
-            self.accession = match[0].split(',')[0]
+            self.accession = match[0].split(',')[0].strip()
 
         match = re.findall(r'Sample Attributes: (.+)\n', self.data)
         lcs = {} # location parts
@@ -318,60 +318,52 @@ class Metadata(object):
 class MetadataBioSample(Metadata):
     def __init__(self, accession, json=default):
         super(MetadataBioSample, self).__init__(accession, json)
-        # ncbi = 'http://www.ncbi.nlm.nih.gov/biosample/'
-        # self.url = '%s?term=%s&report=full&format=text' % (
-        #     ncbi, accession.strip())
-        # self.data = urllib.urlopen(self.url).read()
-        # self.organism = copy.deepcopy(metadata)
-
     def update_biosample_attributes(self):
-        ncbi = 'http://www.ncbi.nlm.nih.gov/biosample/'
-        url = '%s?term=%s&report=full&format=text' % (
-            ncbi, self.sample_accession)
-        data = urllib.urlopen(url).read()
-
-        match = re.findall(r'Organism: (.+)\n', data)
-        if match:
-            self.metadata['organism'] = ' '.join(match[0].split()[:2])
-        else:
-            self.metadata['organism'] = ''
-
-        match = re.findall(r'Sample name: (.+)', data)
-        if match:
-            self.metadata['sample_name'] = match[0].split(';')[0]
-        else:
-            self.metadata['sample_name'] = self.accession.strip()
-        
-        # Extract the BioSample ID
-        if (not 'biosample' in self.metadata or
-            self.metadata['biosample'] == ''):
-            # Extract the SRA experiment ID using the SRA run ID
-            match = re.findall(r'Accession: (.+)', data)
-            if match:
-                experiment_id = match[0]
-                # Extract the SRA sample ID using the SRA experiment ID
-                sample_id = None
-                url = '%s?term=%s&report=full&format=text' % (
-                    ncbi, self.sample_accession)
+        ''' Extract and set BioSample ID, Organism and Sample Name '''
+        # Set NCBI url
+        ncbi = 'http://www.ncbi.nlm.nih.gov'
+        # Extract the SRA experiment ID and project ID using the SRA run ID
+        match1 = re.findall(r'Accession: (.+)', self.data)
+        match2 = re.findall(r'Study accession: (.+)', self.data)
+        if match1 and match2:
+            experiment_id = match1[0]
+            project_id = match2[0]
+            # Extract the SRA sample ID using the SRA experiment ID
+            sample_id = None
+            url = '%s/sra/?term=%s&format=text'%(ncbi, project_id)
+            data = urllib.urlopen(url).read()
+            flag = False
+            for l in data.split('\n'):
+                if flag:
+                    if l.strip() == '': break
+                    tmp = l.split(':')
+                    if tmp[0] == 'Sample':
+                        sample_id = tmp[1].split('(')[-1].strip(' )')
+                elif l.split(':')[-1].strip() == experiment_id:
+                    flag = True
+            if sample_id is not None:
+                # Extract the BioSample ID using the SRA sample ID
+                url = '%s/biosample/?term=%s&format=text' % (ncbi, sample_id)
                 data = urllib.urlopen(url).read()
-                flag = False
-                for l in data.split('\n'):
-                    if flag:
-                        if l.strip() == '': break
-                        tmp = l.split(':')
-                        if tmp[0] == 'Sample':
-                            sample_id = tmp[1].split('(')[-1].strip(' )')
-                    elif l.split(':')[-1].strip() == experiment_id:
-                        flag = True
-                if sample_id is not None:
-                    # Extract the BioSample ID using the SRA sample ID
-                    url = ('http://www.ncbi.nlm.nih.gov/biosample/?'
-                        'term=%s&format=text')%(self.sample_accession)
-                    data = urllib.urlopen(url).read()
-                    match2 = re.findall(r'Identifiers: (.+)\n', data)
-                    if match2:
-                        for ent in match2[0].split(';'):
-                            tmp = ent.split(':')
-                            if tmp[0].strip().lower() == 'biosample':
-                                self.metadata['biosample'] = tmp[1].strip()
-                                break
+                match3 = re.findall(r'Identifiers: (.+)\n', data)
+                if match3:
+                    for ent in match3[0].split(';'):
+                        tmp = ent.split(':')
+                        if tmp[0].strip().lower() == 'biosample':
+                            self.metadata['biosample'] = tmp[1].strip()
+                            break
+                # Extract Organism
+                match4 = re.findall(r'Organism: (.+)\n', data)
+                if match4:
+                    self.metadata['organism'] = ' '.join(match4[0].split()[:2])
+                else:
+                    self.metadata['organism'] = ''
+                # Sample Name
+                match5 = re.findall(r'Sample name: (.+)', data)
+                if (match5 and
+                    match5[0].split(';')[0].lower() not in
+                    ['unidentified', 'missing', 'unknown', 'na']
+                    ):
+                    self.metadata['sample_name'] = match5[0].split(';')[0]
+                else:
+                    self.metadata['sample_name'] = self.accession
