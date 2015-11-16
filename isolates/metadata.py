@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 '''
-hep hey
+
 '''
 import re
 import urllib
@@ -32,9 +32,9 @@ class Metadata(object):
         self.metadata = copy.deepcopy(metadata)
         self.metadata.update(json["seed"])
         if self.metadata['sample_name'] == 'ACCESSION':
-            self.metadata['sample_name'] = accession.strip()
+            self.metadata['sample_name'] = accession
         self.url = 'http://www.ncbi.nlm.nih.gov/sra/?term=%s&format=text' % (
-            accession.strip())
+            accession)
         self.data = urllib.urlopen(self.url).read()
         self.mandatory = json['mandatory']
         self.sample_accession = ''
@@ -67,7 +67,7 @@ class Metadata(object):
         Checks if metadata is valid
         :return: True if all mandatory fields are not ''
         '''
-        self.metadata['files_names'] = files
+        self.metadata['file_names'] = files
 
     def __format_date(self, yyyy=None, mm=None, dd=None):
         '''
@@ -232,9 +232,10 @@ class Metadata(object):
         '''
         match = re.findall(r'Run #1: (.+)\n', self.data)
         if match:
-            self.accession = match[0].split(',')[0]
+            self.accession = match[0].split(',')[0].strip()
 
         match = re.findall(r'Sample Attributes: (.+)\n', self.data)
+        lcs = {} # location parts
         for answer in match:
             for attributes in answer.split(';'):
                 stat = attributes.split('=')
@@ -246,6 +247,8 @@ class Metadata(object):
                     self.metadata['subtype']['serovar'] = val
                 elif att == 'mlst':
                     self.metadata['subtype']['mlst'] = val
+                elif att in ['scientific_name', 'scientific name']:
+                    self.metadata['organism'] = val
                 elif att == 'strain':
                     self.metadata['strain'] = val
                 elif att in ['isolation_source', 'isolation source']:
@@ -274,10 +277,14 @@ class Metadata(object):
                         )
                 elif att in ['collected_by', 'collected by']:
                     self.metadata['collected_by'] = val
+                elif att in ['country', 'region', 'city', 'zip_code']:
+                    lcs[att] = val
                 else:
                     self.metadata['notes'] = '%s %s: %s,' % (
                         self.metadata['notes'], att, val)
-
+            if lcs != {}:
+                h = ['country', 'region', 'city', 'zip_code']
+                self.__interpret_loc( ','.join([lcs[x] for x in h if x in lcs]))
         match = re.findall(r'Platform Name: (.+)\n', self.data)
         if match:
             self.metadata['sequencing_platform'] = platforms.get(
@@ -311,32 +318,52 @@ class Metadata(object):
 class MetadataBioSample(Metadata):
     def __init__(self, accession, json=default):
         super(MetadataBioSample, self).__init__(accession, json)
-        # ncbi = 'http://www.ncbi.nlm.nih.gov/biosample/'
-        # self.url = '%s?term=%s&report=full&format=text' % (
-        #     ncbi, accession.strip())
-        # self.data = urllib.urlopen(self.url).read()
-        # self.organism = copy.deepcopy(metadata)
-
     def update_biosample_attributes(self):
-        ncbi = 'http://www.ncbi.nlm.nih.gov/biosample/'
-        url = '%s?term=%s&report=full&format=text' % (
-            ncbi, self.sample_accession)
-        data = urllib.urlopen(url).read()
-
-        match = re.findall(r'Organism: (.+)\n', data)
-        if match:
-            self.metadata['organism'] = ' '.join(match[0].split()[:2])
-        else:
-            self.metadata['organism'] = ''
-
-        match = re.findall(r'Sample name: (.+)', data)
-        if match:
-            self.metadata['sample_name'] = match[0].split(';')[0]
-        else:
-            self.metadata['sample_name'] = self.accession.strip()
-
-        # match = re.findall(r'SRA: (.+)', data)
-        # if match == []:
-        #     self.accession = self.accession.strip()
-        # else:
-        #     self.accession = match[0].split(';')[0]
+        ''' Extract and set BioSample ID, Organism and Sample Name '''
+        # Set NCBI url
+        ncbi = 'http://www.ncbi.nlm.nih.gov'
+        # Extract the SRA experiment ID and project ID using the SRA run ID
+        match1 = re.findall(r'Accession: (.+)', self.data)
+        match2 = re.findall(r'Study accession: (.+)', self.data)
+        if match1 and match2:
+            experiment_id = match1[0]
+            project_id = match2[0]
+            # Extract the SRA sample ID using the SRA experiment ID
+            sample_id = None
+            url = '%s/sra/?term=%s&format=text'%(ncbi, project_id)
+            data = urllib.urlopen(url).read()
+            flag = False
+            for l in data.split('\n'):
+                if flag:
+                    if l.strip() == '': break
+                    tmp = l.split(':')
+                    if tmp[0] == 'Sample':
+                        sample_id = tmp[1].split('(')[-1].strip(' )')
+                elif l.split(':')[-1].strip() == experiment_id:
+                    flag = True
+            if sample_id is not None:
+                # Extract the BioSample ID using the SRA sample ID
+                url = '%s/biosample/?term=%s&format=text' % (ncbi, sample_id)
+                data = urllib.urlopen(url).read()
+                match3 = re.findall(r'Identifiers: (.+)\n', data)
+                if match3:
+                    for ent in match3[0].split(';'):
+                        tmp = ent.split(':')
+                        if tmp[0].strip().lower() == 'biosample':
+                            self.metadata['biosample'] = tmp[1].strip()
+                            break
+                # Extract Organism
+                match4 = re.findall(r'Organism: (.+)\n', data)
+                if match4:
+                    self.metadata['organism'] = ' '.join(match4[0].split()[:2])
+                else:
+                    self.metadata['organism'] = ''
+                # Sample Name
+                match5 = re.findall(r'Sample name: (.+)', data)
+                if (match5 and
+                    match5[0].split(';')[0].lower() not in
+                    ['unidentified', 'missing', 'unknown', 'na']
+                    ):
+                    self.metadata['sample_name'] = match5[0].split(';')[0]
+                else:
+                    self.metadata['sample_name'] = self.accession

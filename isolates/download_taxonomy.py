@@ -16,17 +16,16 @@ Note: This skeleton file can be safely removed if not needed!
 """
 from __future__ import division, print_function, absolute_import
 
-import argparse
 import sys
-import logging
-import pandas as pd
-import urllib
-from StringIO import StringIO
-from path import Path
 import os
 import re
 import json
-
+import argparse
+import logging
+import urllib
+import pandas as pd
+from StringIO import StringIO
+from path import Path
 from pprint import pprint as pp
 
 from subprocess import call
@@ -143,7 +142,11 @@ def download_species(taxid, output, json):
                 s = Sequence(m.accession, dir)
                 s.download_fastq()
                 if not s.error:
-                    m.metadata["file_names"] = ' '.join(s.files)
+                    m.metadata["file_names"] = ' '.join(
+                        [os.path.basename(sf).replace(' ','_')
+                            for sf in s.files
+                            if not os.path.basename(sf) == 'meta.json']
+                        )
                     m.save_metadata(s.dir)
             except ValueError, e:
                 _logger.error('%s:%s', accession.strip(), e)
