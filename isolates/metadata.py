@@ -38,7 +38,7 @@ class Metadata(object):
         self.data = urllib.urlopen(self.url).read()
         self.mandatory = json['mandatory']
         self.sample_accession = ''
-        self.accession = ''
+        self.accession = accession
 
     def valid_metadata(self):
         '''
@@ -253,10 +253,11 @@ class Metadata(object):
                     self.metadata['strain'] = val
                 elif att in ['isolation_source', 'isolation source']:
                     found = False
-                    for cat, keywords in ontology:
-                        if any([x in val.lower() for x in keywords]):
+                    for d in ontology:
+                        cats = [d[k][0] for k in d.keys() if k in val.lower()]
+                        if cats:
                             found = True
-                            self.metadata['isolation_source'] = cat
+                            self.metadata['isolation_source'] = cats[0]
                             break
                     if not found:
                         _logger.warning(
