@@ -200,6 +200,7 @@ def DownloadRunFiles(m, tmpdir, preserve, _logger):
 def CreateSampleDir(sfiles, m, sample_dir):
     sample_dir = str(sample_dir)
     if not os.path.exists(sample_dir):
+        _logger.info("Create sample dir: %s", sample_dir)
         # Create 'sample' dir
         os.mkdir(sample_dir)
         # Move files from tmpdir to sample dir
@@ -214,12 +215,12 @@ def CreateSampleDir(sfiles, m, sample_dir):
             m.save_metadata(sample_dir)
         except ValueError, e:
             _logger.error(e)
-            return None
+            return False
         else:
-            return sample_dir
+            return True
     else:
         _logger.error("Error: Sample dir (%s) already exists!"%sample_dir)
-        return None
+        return False
 
 def download_fastq_from_list(accession_list, output, json, preserve=False):
     """
@@ -314,7 +315,11 @@ def download_fastq_from_list(accession_list, output, json, preserve=False):
                         os.chdir(tmpdir)
                         sfiles = DownloadRunFiles(m, tmpdir, preserve, _logger)
                         if sfiles is not None:
-                            CreateSampleDir(sfiles, m, sample_dir)
+                            success = CreateSampleDir(sfiles, m, sample_dir)
+                            if not success:
+                                _logger.error("Sample dir could not be created! (%s)"%sample_dir)
+                                failed_accession.append(accession)
+                                continue
                         else:
                             _logger.error("Files could not be retrieved! (%s)"%accession)
                             failed_accession.append(accession)
