@@ -171,13 +171,13 @@ class metadata_obj(object):
                     if not found:
                         _logger.warning(
                             'Source not identified: %s, %s',
-                            val, self.accession
+                            val, query
                         )
                         # Notify Curators By Email
                         if mail is not None:
                             mail.send('New isolation source...',
                                       'Source not identified: %s, %s'%(
-                                          val, self.accession))
+                                          val, query))
                     self['source_note'] = val
                 elif att == 'BioSample':
                     self['biosample'] = val
@@ -188,7 +188,7 @@ class metadata_obj(object):
                     if self['collection_date'] == '':
                         _logger.warning(
                             'Date Empty: %s',
-                            val, self.accession
+                            val, query
                         )
                 elif att in ['collected_by', 'collected by']:
                     self['collected_by'] = val
@@ -352,7 +352,7 @@ class metadata_obj(object):
                 g = geocoder.google(val)
             except Exception, e:
                 _logger.warning(
-                    'Geocoder error %s', self.accession
+                    'Geocoder error %s', query
                 )
                 location_hash[val] = ('', '', '', '', val)
             else:

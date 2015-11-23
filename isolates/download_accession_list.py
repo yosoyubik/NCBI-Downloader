@@ -183,7 +183,7 @@ def ExtractSampleMetadata(accession, json=None):
 def DownloadRunFiles(m, tmpdir, _logger):
     # Download run files
     try:
-        s = Sequence(m.accession, tmpdir)
+        s = Sequence(m.accessions['query'], tmpdir)
         s.download_fastq()
         if not s.error:
             return s.files
