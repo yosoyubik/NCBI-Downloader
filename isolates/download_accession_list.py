@@ -314,10 +314,11 @@ def download_fastq_from_list(accession_list, output, json, preserve=False):
                     with TemporaryDirectory() as tmpdir:
                         os.chdir(tmpdir)
                         sfiles = DownloadRunFiles(m, tmpdir, preserve, _logger)
+                        os.chdir(batch_dir)
                         if sfiles is not None:
-                            success = CreateSampleDir(sfiles, m, sample_dir)
+                            success = CreateSampleDir(sfiles, m, i)
                             if not success:
-                                _logger.error("Sample dir could not be created! (%s)"%sample_dir)
+                                _logger.error("Sample dir could not be created! (%s)"%i)
                                 failed_accession.append(accession)
                                 continue
                         else:
