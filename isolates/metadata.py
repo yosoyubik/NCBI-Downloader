@@ -14,6 +14,9 @@ import geocoder
 from datetime import datetime
 from source import ontology, platforms, location_hash
 from template import metadata, default
+import socket
+from email.mime.text import MIMEText
+from subprocess import Popen, PIPE
 
 # Setup of what?
 logging.basicConfig(
@@ -25,6 +28,30 @@ logging.basicConfig(
 )
 _logger = logging.getLogger(__name__)
 
+class mail_obj():
+   '''
+   >>> mail = mail_obj(['to_me@domain.com'], 'from_me@domain.com')
+   >>> mail.send('Hello my subject!','Hello my body!')
+   '''
+   def __init__(self, recepients, sender):
+      self.to = recepients
+      self.fr = sender
+   def send(self, subject, message):
+      '''  '''
+      msg = MIMEText(message)
+      msg["From"] = self.fr
+      msg["To"] = ', '.join(self.to) if isinstance(self.to, list) else self.to
+      msg["Subject"] = subject
+      p = Popen(["sendmail -r %s %s"%(self.fr, ' '.join(self.to))],
+                shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE)
+      out, err = p.communicate(msg.as_string())
+      p.wait()
+
+# Setup Mail Wrapper
+if 'cbs.dtu.dk' in socket.getfqdn() or 'computerome' in socket.getfqdn():
+    mail = mail_obj(['mcft@cbs.dtu.dk'], 'mcft@cbs.dtu.dk')
+else:
+    mail = None
 
 class Metadata(object):
     '''  '''
@@ -264,6 +291,11 @@ class Metadata(object):
                             'Source not identified: %s, %s',
                             val, self.accession
                         )
+                        # Notify Curators By Email
+                        if mail is not None:
+                            mail.send('New isolation source...',
+                                      'Source not identified: %s, %s'%(
+                                          val, self.accession))
                     self.metadata['source_note'] = val
                 elif att == 'BioSample':
                     self.metadata['biosample'] = val
