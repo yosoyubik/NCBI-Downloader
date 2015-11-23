@@ -1,3 +1,4 @@
+import os
 # List of known platforms
 platforms = {
     'illumina': 'Illumina',
