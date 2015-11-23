@@ -32,7 +32,7 @@ from tempfile import mkdtemp
 from subprocess import call
 from progressbar import Bar, Percentage, ProgressBar, ETA
 
-from isolates.metadata import MetadataBioSample
+from isolates.metadata import metadata_obj
 from isolates.sequence import Sequence
 from isolates import __version__
 
@@ -177,12 +177,7 @@ def parse_args_accessions(args):
 def ExtractSampleMetadata(accession, json=None):
     # Identify BIOSAMPLE ID
     # Extract sample metadata
-    if json is None:
-        m = MetadataBioSample(accession)
-    else:
-        m = MetadataBioSample(accession, json)
-    m.update_attributes()
-    m.update_biosample_attributes()
+    m = metadata_obj(accession, json)
     return m
 
 def DownloadRunFiles(m, tmpdir, _logger):
