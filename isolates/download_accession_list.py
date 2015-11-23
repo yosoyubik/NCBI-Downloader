@@ -263,6 +263,7 @@ def download_fastq_from_list(accession_list, output, json, preserve=False):
                 _logger.error("unknown accession type for '%s'!"%accession)
                 failed_accession.append(accession)
                 continue
+            _logger.info("Acc Found: %s (%s)", accession, accession_type)
             if accession_type == 'study':
                 # ToDo
                 # Find all associated samples
