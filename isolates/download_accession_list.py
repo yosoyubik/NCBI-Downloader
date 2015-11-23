@@ -238,7 +238,7 @@ def download_fastq_from_list(accession_list, output, json, preserve=False):
     metadata = []
     with open(accession_list, 'r') as f:
         batch_dir = str(output)
-        os.mkdir(batch_dir)
+        if not os.path.exists(batch_dir): os.mkdir(batch_dir)
         # Count samples in accession_list
         n_samples = sum(1 for l in f)
         f.seek(0)
