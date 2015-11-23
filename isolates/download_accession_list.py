@@ -192,7 +192,7 @@ def DownloadRunFiles(m, tmpdir, _logger):
         _logger.error(e)
         return None
 
-def CreateSampleDir(sfiles, m, sample_dir):
+def CreateSampleDir(sfiles, m, sample_dir, preserve=False):
     sample_dir = str(sample_dir)
     if len(sfiles) == 0:
         _logger.error("Error: No files were found! (%s)"%sample_dir)
@@ -203,6 +203,10 @@ def CreateSampleDir(sfiles, m, sample_dir):
         os.mkdir(sample_dir)
         # Move files from tmpdir to sample dir
         for sf in sfiles: move(sf, sample_dir)
+    elif not preserve:
+        # Empty sample directory
+        for fn in os.listdir(sample_dir):
+            os.unlink("%s/%s"%(sample_dir, fn))
     # Update and create metadata file
     try:
         m.metadata["file_names"] = ' '.join(
@@ -314,10 +318,10 @@ def download_fastq_from_list(accession_list, output, json, preserve=False):
                         os.chdir(batch_dir)
                         sample_dir = "%s/%s/"%(batch_dir, i)
                         sfiles = [x for x in os.listdir(sample_dir) if any([y in x for y in ['fq','fastq']])]
-                        if preserve and len(sfiles) == 0:
+                        if not preserve or len(sfiles) == 0:
                             sfiles = DownloadRunFiles(m, tmpdir, _logger)
                         if sfiles is not None:
-                            success = CreateSampleDir(sfiles, m, sample_dir)
+                            success = CreateSampleDir(sfiles, m, sample_dir, preserve)
                             if not success:
                                 failed_accession.append(accession)
                                 continue
