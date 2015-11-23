@@ -186,6 +186,7 @@ def DownloadRunFiles(m, tmpdir, _logger):
         s = Sequence(m.accessions['query'], tmpdir)
         s.download_fastq()
         if not s.error:
+            _logger.info("Downloaded files: %s", ','.join(s.files))
             return s.files
         else: return None
     except ValueError, e:
@@ -207,6 +208,8 @@ def CreateSampleDir(sfiles, m, sample_dir, preserve=False):
         # Empty sample directory
         for fn in os.listdir(sample_dir):
             os.unlink("%s/%s"%(sample_dir, fn))
+        # Move files from tmpdir to sample dir
+        for sf in sfiles: move(sf, sample_dir)
     # Update and create metadata file
     try:
         m.metadata["file_names"] = ' '.join(
