@@ -315,13 +315,15 @@ def download_fastq_from_list(accession_list, output, json, preserve=False):
                 m = ExtractSampleMetadata(accession, json)
                 if m.valid_metadata():
                     with TemporaryDirectory() as tmpdir:
-                        os.chdir(tmpdir)
-                        sfiles = DownloadRunFiles(m, tmpdir, preserve, _logger)
                         os.chdir(batch_dir)
+                        sample_dir = "%s/%s/"%(batch_dir, i)
+                        sfiles = [x for x in os.listdir(sample_dir) if any([y in x for y in ['fq','fastq']])]
+                        if len(sfiles) == 0:
+                            sfiles = DownloadRunFiles(m, tmpdir, preserve, _logger)
                         if sfiles is not None:
-                            success = CreateSampleDir(sfiles, m, i)
+                            success = CreateSampleDir(sfiles, m, sample_dir)
                             if not success:
-                                _logger.error("Sample dir could not be created! (%s)"%i)
+                                _logger.error("Sample dir could not be created! (%s)"%sample_dir)
                                 failed_accession.append(accession)
                                 continue
                         else:
