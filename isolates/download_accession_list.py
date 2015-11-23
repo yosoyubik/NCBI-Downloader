@@ -185,11 +185,11 @@ def ExtractSampleMetadata(accession, json=None):
     m.update_biosample_attributes()
     return m
 
-def DownloadRunFiles(m, tmpdir, preserve, _logger):
+def DownloadRunFiles(m, tmpdir, _logger):
     # Download run files
     try:
         s = Sequence(m.accession, tmpdir)
-        s.download_fastq(preserve)
+        s.download_fastq()
         if not s.error:
             return s.files
         else: return None
@@ -199,32 +199,32 @@ def DownloadRunFiles(m, tmpdir, preserve, _logger):
 
 def CreateSampleDir(sfiles, m, sample_dir):
     sample_dir = str(sample_dir)
+    if len(sfiles) == 0:
+        _logger.error("Error: No files were found! (%s)"%sample_dir)
+        return False
     if not os.path.exists(sample_dir):
         _logger.info("Create sample dir: %s", sample_dir)
         # Create 'sample' dir
         os.mkdir(sample_dir)
         # Move files from tmpdir to sample dir
         for sf in sfiles: move(sf, sample_dir)
-        # Update and create metadata file
-        try:
-            m.metadata["file_names"] = ' '.join(
-                [os.path.basename(sf).replace(' ','_')
-                    for sf in sfiles
-                    if not os.path.basename(sf) == 'meta.json']
-                )
-            m.save_metadata(sample_dir)
-        except ValueError, e:
-            _logger.error(e)
-            return False
-        else:
-            return True
-    else:
-        _logger.error("Error: Sample dir (%s) already exists!"%sample_dir)
+    # Update and create metadata file
+    try:
+        m.metadata["file_names"] = ' '.join(
+            [os.path.basename(sf).replace(' ','_')
+                for sf in sfiles
+                if not os.path.basename(sf) == 'meta.json']
+            )
+        m.save_metadata(sample_dir)
+    except ValueError, e:
+        _logger.error(e)
         return False
+    else:
+        return True
 
 def download_fastq_from_list(accession_list, output, json, preserve=False):
     """
-    Get Fastq from list of Ids
+    Get Fastq from list of IDs
 
     :param accession_list: List of accessions
     :param dir: Output folder
@@ -318,12 +318,11 @@ def download_fastq_from_list(accession_list, output, json, preserve=False):
                         os.chdir(batch_dir)
                         sample_dir = "%s/%s/"%(batch_dir, i)
                         sfiles = [x for x in os.listdir(sample_dir) if any([y in x for y in ['fq','fastq']])]
-                        if len(sfiles) == 0:
-                            sfiles = DownloadRunFiles(m, tmpdir, preserve, _logger)
+                        if preserve and len(sfiles) == 0:
+                            sfiles = DownloadRunFiles(m, tmpdir, _logger)
                         if sfiles is not None:
                             success = CreateSampleDir(sfiles, m, sample_dir)
                             if not success:
-                                _logger.error("Sample dir could not be created! (%s)"%sample_dir)
                                 failed_accession.append(accession)
                                 continue
                         else:
