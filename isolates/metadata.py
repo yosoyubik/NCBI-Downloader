@@ -13,7 +13,7 @@ import io
 import geocoder
 from datetime import datetime
 from source import ontology, platforms, location_hash
-from template import metadata, default
+from template import metadata as metadata_template, default_metadata
 import socket
 from email.mime.text import MIMEText
 from subprocess import Popen, PIPE
@@ -80,8 +80,9 @@ else:
 class metadata_obj(object):
     ''' This class describes metadata associated with a sample '''
     def __init__(self, accession, settings=None):
-        if settings is None: settings = default
-        self.metadata = settings["seed"]
+        if settings is None: settings = metadata_default
+        self.metadata = metadata_template
+        self.metadata.update(settings["seed"])
         self.mandatory = settings['mandatory']
         self.accessions = {'query': accession}
         # Set metadata collection site URL
