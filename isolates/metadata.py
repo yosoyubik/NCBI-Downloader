@@ -13,7 +13,7 @@ import io
 import geocoder
 from datetime import datetime
 from source import ontology, platforms, location_hash
-from template import metadata as metadata_template, default_metadata
+from template import metadata as metadata_template, default as default_metadata
 import socket
 from email.mime.text import MIMEText
 from subprocess import Popen, PIPE
