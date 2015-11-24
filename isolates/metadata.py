@@ -57,14 +57,16 @@ class mail_obj():
    >>> mail = mail_obj(['to_me@domain.com'], 'from_me@domain.com')
    >>> mail.send('Hello my subject!','Hello my body!')
    '''
-   def __init__(self, recepients, sender):
+   def __init__(self, recepients, sender, reply):
       self.to = recepients
       self.fr = sender
+      self.rt = reply
    def send(self, subject, message):
       '''  '''
       msg = MIMEText(message)
-      msg["From"] = self.fr
       msg["To"] = ', '.join(self.to) if isinstance(self.to, list) else self.to
+      msg["From"] = self.fr
+      msg["Reply-To"] = self.rt
       msg["Subject"] = subject
       p = Popen(["sendmail -r %s %s"%(self.fr, ' '.join(self.to))],
                 shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE)
@@ -72,8 +74,14 @@ class mail_obj():
       p.wait()
 
 # Setup Mail Wrapper
-if 'cbs.dtu.dk' in socket.getfqdn() or 'computerome' in socket.getfqdn():
-    mail = mail_obj(['mcft@cbs.dtu.dk'], 'mcft@cbs.dtu.dk') #cgehelp
+if 'cbs.dtu.dk' in socket.getfqdn():
+    mail = mail_obj(['mcft@cbs.dtu.dk'],
+                    'mail-deamon@computerome.dtu.dk',
+                    'cgehelp@cbs.dtu.dk')
+elif 'computerome' in socket.getfqdn():
+    mail = mail_obj(['mcft@cbs.dtu.dk'],
+                    'mail-deamon@cbs.dtu.dk',
+                    'cgehelp@cbs.dtu.dk')
 else:
     mail = None
 
