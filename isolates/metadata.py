@@ -73,7 +73,7 @@ class mail_obj():
 
 # Setup Mail Wrapper
 if 'cbs.dtu.dk' in socket.getfqdn() or 'computerome' in socket.getfqdn():
-    mail = mail_obj(['cgehelp@cbs.dtu.dk'], 'mcft@cbs.dtu.dk')
+    mail = mail_obj(['mcft@cbs.dtu.dk'], 'mcft@cbs.dtu.dk') #cgehelp
 else:
     mail = None
 
