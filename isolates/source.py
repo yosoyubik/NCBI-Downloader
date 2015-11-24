@@ -1,3 +1,4 @@
+import os
 # List of known platforms
 platforms = {
     'illumina': 'Illumina',
@@ -21,86 +22,24 @@ location_hash = {
                 'latitude': 44.1419049, 'location_note': 'USA:OR'}
 }
 
-ontology = [
-    ('other',  ['environmental', 'enviromental', 'soil', 'fines',
-                'painting', 'railing', 'prebiotic', 'dust', 'lagoon',
-                'washroom', 'crate', 'fertilizer', 'rubber', 'broom', 'waste',
-                'pet treat', 'dog food', 'pet food', 'chews', 'metal',
-                'tinfoil',
-                'bathroom', 'manufacture', 'septic tank', 'kitten food',
-                'facility', 'plastic', 'kennel', 'psyllium', 'bedding',
-                'floor',
-                'sponge stick', 'packaging', 'cage', 'feed', 'drag swab',
-                'arnica montana', 'kitchen', 'cat food', 'catfood',
-                'cat\'s claw',
-                'comminuted', 'cotton', 'belt', 'egg pool', 'dog chew']),
-    ('food',   ['food', 'fenugreek', 'seed', 'fresh', 'frozen', 'frz', 'tahin',
-                'basil', 'meat', 'dried', 'sage', 'powder', 'cantaloupe',
-                'meal',
-                'tempeh', 'chile', 'milk', 'mushroom', 'ground', 'cooked',
-                'egg',
-                'cucumber', 'kabob', 'cheese', 'oregano', 'rosemary',
-                'baklava',
-                'chocolate', 'marjoram', 'asafoetida', 'meringue', ' raw',
-                'raw ',
-                'seafood', 'mix', 'cardamon', 'hamburger', 'spic', 'salt',
-                'radish', 'pepper', 'pistachio', 'dry', 'slice', 'cube',
-                'crab',
-                'whey', 'spinach', 'butter', 'fried', 'kasuri methi', 'minced',
-                'frog leg', 'pork', 'artichoke', 'calonji', 'fillet', 'noodle',
-                'herbs', 'diced', 'mouloukhia', 'grated', 'almond', 'avocado',
-                'leaves', 'boiled', 'cilantro', 'biscuit', 'carrageenan',
-                'charoli', 'halva', 'amaranth', 'barley drink', 'pesto',
-                'fruit',
-                'puffed', 'masala', 'shredded', 'tea', 'lettuce', 'nut',
-                'mango',
-                'cream', 'origanum', 'tomoato', 'celery', 'toast', 'leaf',
-                'dal',
-                'tomato', 'verde', 'papaya', 'halawa', 'organic', 'snack',
-                'soy',
-                'chilli', 'giblets combo', 'cake', 'salami', 'paprika',
-                'paste',
-                'pecan', 'cumin', 'yeast', 'sesame', 'beef', 'vanilla',
-                'saku block', 'root', 'diet', 'chamomile', 'queso',
-                'sunflower',
-                'parsley', 'dehydrat', 'onion', 'culantro', 'papdi', 'cashew',
-                'turmeric', 'falafel', 'cereal', 'coriander', 'thyme', 'filet',
-                'flour', 'lasagna', 'roast', 'foxtail millets', 'tuna block',
-                'broiled', 'dumpling', 'broccoli', 'cordon bleu',
-                'cordon blue',
-                ' thigh', ' drumsticks', ' breast', 'kiev', 'smoked', ' tail',
-                'popcorn', 'stuffed', 'jerky']),
-    ('animal', ['animal', 'bird', 'mammal', 'fish', 'pig', 'seagull', 'avian',
-                'turtle', 'bovine', 'porcine', 'cat', 'fusilier', 'snapper',
-                'bat', 'pabda', 'threadfin', 'python', 'swine', 'feline',
-                'lamb',
-                'equine', 'octopus', 'deer', 'duck', 'ovine', 'popano', 'bass',
-                'chichen', 'tilapia', 'red nilotica', 'cervid', 'finch',
-                'gecko',
-                'redgull', 'tortoise', 'caprine', 'monitor', 'camelid',
-                'snake',
-                'rodent', 'camel', 'cow', 'bata', 'dog', 'wolverine', 'equine',
-                'frog', 'mrigal', 'sparrow', 'gizzards', 'siskin', 'canine',
-                'mink', 'rohu', 'horse', 'alpaca', 'moose', 'reptile',
-                'cattle',
-                'baim', 'felien', 'skink', 'chukar', 'lizard', 'sheep',
-                'perch',
-                'redpoll', 'eel', 'lion', 'scad', 'monkey', 'elk', 'llama',
-                'hamster', 'batashi', 'raccoon', 'mouse', 'poultry', 'rabbit',
-                'racoon', 'scallop', 'hilsa', 'shrimp', 'pomfret', 'pompfret',
-                'snail', 'chicken', 'turkey', 'anchovy', 'squid', 'tuna',
-                'mahi',
-                'lobster', 'mackerel', 'barramundi', 'iguana', 'carcass',
-                'amphibian', 'toad', 'bivalve', 'serpent', 'salamander',
-                'trachemys scripta', 'prawns', 'sternotherus odoratus']),
-    ('water',  ['water', 'pond', 'sediment', 'sea', 'irrigation']),
-    ('food',   ['corn', 'chip', 'sprout']),
-    ('human',  ['human', 'feces', 'fecal', 'stool', 'blood', 'fluid', 'urine',
-                'clinical', 'aspirate', 'tissue', 'patient', 'wound', 'liver',
-                'rectal']),
-    ('laboratory',  ['bacterial']),
-    ('other',  ['other', 'farm', 'fan', 'swab', 'bag', 'gum', 'produc', 'air',
-                'surface']),
-    ('unknown', ['unknown', 'missing', 'na', 'sentiment', 'rupsha', 'sample',
-                 'isolate'])
-]
+# Read Ontology DB from file to dict
+ontology = []
+try: ontology_fp = '/'.join(__file__.split('/')[:-2])+'/etc/source_ontology.csv'
+except: pass
+else:
+    if os.path.exists(ontology_fp):
+        ontology.append({})
+        with open(ontology_fp) as f:
+            for l in f:
+                l = l.strip()
+                if l == '': continue
+                if l[0] == '#':
+                    if len(l) > 3 and l[:3] == '###':
+                        # Start new ontology dictionary
+                        ontology.append({})
+                    continue
+                if not ',' in l: continue
+                tmp = l.strip().split(',')
+                if not tmp[0] in ontology[-1]:
+                    ontology[-1][tmp[0]] = tmp[1:]
+                else: print "Ontology doublicate found! Please fix (%s)"%tmp[0]
