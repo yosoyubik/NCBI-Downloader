@@ -317,7 +317,10 @@ def download_fastq_from_list(accession_list, output, json, preserve=False, all_r
                             with TemporaryDirectory() as tmpdir:
                                 os.chdir(batch_dir)
                                 sample_dir = "%s/%s/"%(batch_dir, sample_dir_id)
-                                sfiles = [x for x in os.listdir(sample_dir) if any([y in x for y in ['fq','fastq']])]
+                                if os.path.exists(sample_dir):
+                                    sfiles = [x for x in os.listdir(sample_dir) if any([y in x for y in ['fq','fastq']])]
+                                else:
+                                    sfiles = []
                                 if not preserve or len(sfiles) == 0:
                                     sfiles = DownloadRunFiles(runid, tmpdir, _logger)
                                 if sfiles is not None:
@@ -334,7 +337,10 @@ def download_fastq_from_list(accession_list, output, json, preserve=False, all_r
                         with TemporaryDirectory() as tmpdir:
                             os.chdir(batch_dir)
                             sample_dir = "%s/%s/"%(batch_dir, sample_dir_id)
-                            sfiles = [x for x in os.listdir(sample_dir) if any([y in x for y in ['fq','fastq']])]
+                            if os.path.exists(sample_dir):
+                                sfiles = [x for x in os.listdir(sample_dir) if any([y in x for y in ['fq','fastq']])]
+                            else:
+                                sfiles = []
                             if not preserve or len(sfiles) == 0:
                                 sfiles = []
                                 for runid in m.runIDs:
@@ -373,7 +379,10 @@ def download_fastq_from_list(accession_list, output, json, preserve=False, all_r
                     with TemporaryDirectory() as tmpdir:
                         os.chdir(batch_dir)
                         sample_dir = "%s/%s/"%(batch_dir, sample_dir_id)
-                        sfiles = [x for x in os.listdir(sample_dir) if any([y in x for y in ['fq','fastq']])]
+                        if os.path.exists(sample_dir):
+                            sfiles = [x for x in os.listdir(sample_dir) if any([y in x for y in ['fq','fastq']])]
+                        else:
+                            sfiles = []
                         if not preserve or len(sfiles) == 0:
                             sfiles = DownloadRunFiles(accession, tmpdir, _logger)
                         if sfiles is not None:
