@@ -140,7 +140,6 @@ def parse_args_accessions(args):
         '--version',
         action='version',
         version='isolates {ver}'.format(ver=__version__))
-
     parser.add_argument(
         '-a',
         nargs=1,
@@ -166,6 +165,14 @@ def parse_args_accessions(args):
         help='preserve any existing SRA and fastq files\n'
     )
     parser.add_argument(
+        '--all_runs_as_samples',
+        action="store_true",
+        dest="all_runs_as_samples",
+        default=False,
+        help=('Treat all runs associated to a sample as separate samples. '
+              'Default is to combine them into one run.\n')
+    )
+    parser.add_argument(
         '-out',
         nargs=1,
         metavar=('OUTPUT'),
@@ -180,10 +187,10 @@ def ExtractSampleMetadata(accession, json=None):
     m = metadata_obj(accession, json)
     return m
 
-def DownloadRunFiles(m, tmpdir, _logger):
+def DownloadRunFiles(runid, tmpdir, _logger):
     # Download run files
     try:
-        s = Sequence(m.accessions['query'], tmpdir)
+        s = Sequence(runid, tmpdir)
         s.download_fastq()
         if not s.error:
             _logger.info("Downloaded files: %s", ','.join(s.files))
@@ -224,7 +231,7 @@ def CreateSampleDir(sfiles, m, sample_dir, preserve=False):
     else:
         return True
 
-def download_fastq_from_list(accession_list, output, json, preserve=False):
+def download_fastq_from_list(accession_list, output, json, preserve=False, all_runs_as_samples=False):
     """
     Get Fastq from list of IDs
 
@@ -255,6 +262,7 @@ def download_fastq_from_list(accession_list, output, json, preserve=False):
         ).start()
         pbar.update(0)
         failed_accession = []
+        sample_dir_id = 0
         for i, l in enumerate(f):
             accession = l.strip()
             if accession == '': continue
@@ -301,33 +309,90 @@ def download_fastq_from_list(accession_list, output, json, preserve=False):
                 failed_accession.append(accession)
                 continue
             elif accession_type == 'experiment':
-                # ToDo
-                # extract_sample_metadata()
-                # Find all runs associated to the experiment
-                # download_run_files()
-                # if option --all_runs_as_samples
-                #   loop runs
-                #     create_sample_dir()
-                # else:
-                #   combine_runs_to_run()
-                #   create_sample_dir()
-                _logger.error("experiment accession are not supported yet! (%s)"%accession)
-                failed_accession.append(accession)
-                continue
+                m = ExtractSampleMetadata(accession, json)
+                if m.valid_metadata():
+                    # E all runs associated to the experiment
+                    if all_runs_as_samples:
+                        for runid in m.runIDs:
+                            with TemporaryDirectory() as tmpdir:
+                                os.chdir(batch_dir)
+                                sample_dir = "%s/%s/"%(batch_dir, sample_dir_id)
+                                if os.path.exists(sample_dir):
+                                    sfiles = [x for x in os.listdir(sample_dir) if any([y in x for y in ['fq','fastq']])]
+                                else:
+                                    sfiles = []
+                                if not preserve or len(sfiles) == 0:
+                                    sfiles = DownloadRunFiles(runid, tmpdir, _logger)
+                                if sfiles is not None:
+                                    success = CreateSampleDir(sfiles, m, sample_dir, preserve)
+                                    if not success:
+                                        failed_accession.append(accession)
+                                        continue
+                                    sample_dir_id += 1
+                                else:
+                                    _logger.error("Files could not be retrieved! (%s)"%accession)
+                                    failed_accession.append(accession)
+                                    continue
+                    else:
+                        with TemporaryDirectory() as tmpdir:
+                            os.chdir(batch_dir)
+                            sample_dir = "%s/%s/"%(batch_dir, sample_dir_id)
+                            if os.path.exists(sample_dir):
+                                sfiles = [x for x in os.listdir(sample_dir) if any([y in x for y in ['fq','fastq']])]
+                            else:
+                                sfiles = []
+                            if not preserve or len(sfiles) == 0:
+                                sfiles = []
+                                for runid in m.runIDs:
+                                    sf = DownloadRunFiles(runid, tmpdir, _logger)
+                                    if sf is not None:
+                                        sfiles.append(sf)
+                                    else:
+                                        _logger.error("Run files could not be retrieved! (%s)"%runid)
+                            if sfiles != []:
+                                # Combine sfiles into one entry
+                                csfiles = []
+                                for file_no, file_set in enumerate(zip(*sfiles)):
+                                    fn = file_set[0].split('/')[-1]
+                                    ext = '.'.join(fn.split('.')[1:])
+                                    new_file = "%s_%s.%s"%(fn.split('_')[0],file_no, ext)
+                                    with open(new_file, 'w') as nf:
+                                        for fn in file_set:
+                                            with open(fn, 'rb') as f:
+                                                nf.write(f.read())
+                                    csfiles.append(new_file)
+                                if csfiles != []:
+                                    success = CreateSampleDir(csfiles, m, sample_dir, preserve)
+                                    if not success:
+                                        failed_accession.append(accession)
+                                        continue
+                                    sample_dir_id += 1
+                                else:
+                                    _logger.error("Files could not be combined! (%s)"%accession)
+                                    failed_accession.append(accession)
+                                    continue
+                            else:
+                                _logger.error("Files could not be retrieved! (%s)"%accession)
+                                failed_accession.append(accession)
+                                continue
             elif accession_type == 'run':
                 m = ExtractSampleMetadata(accession, json)
                 if m.valid_metadata():
                     with TemporaryDirectory() as tmpdir:
                         os.chdir(batch_dir)
-                        sample_dir = "%s/%s/"%(batch_dir, i)
-                        sfiles = [x for x in os.listdir(sample_dir) if any([y in x for y in ['fq','fastq']])]
+                        sample_dir = "%s/%s/"%(batch_dir, sample_dir_id)
+                        if os.path.exists(sample_dir):
+                            sfiles = [x for x in os.listdir(sample_dir) if any([y in x for y in ['fq','fastq']])]
+                        else:
+                            sfiles = []
                         if not preserve or len(sfiles) == 0:
-                            sfiles = DownloadRunFiles(m, tmpdir, _logger)
+                            sfiles = DownloadRunFiles(accession, tmpdir, _logger)
                         if sfiles is not None:
                             success = CreateSampleDir(sfiles, m, sample_dir, preserve)
                             if not success:
                                 failed_accession.append(accession)
                                 continue
+                            sample_dir_id += 1
                         else:
                             _logger.error("Files could not be retrieved! (%s)"%accession)
                             failed_accession.append(accession)
@@ -357,7 +422,7 @@ def download_accession_list():
                 exit()
         else:
             default = None
-        download_fastq_from_list(args.a[0], args.out[0], default, args.preserve)
+        download_fastq_from_list(args.a[0], args.out[0], default, args.preserve, args.all_runs_as_samples)
     else:
         print('Usage: -a PATH -o ORGANISM -out PATH [-m JSON]')
 

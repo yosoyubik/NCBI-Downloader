@@ -221,6 +221,9 @@ class metadata_obj(object):
         match = re.findall(r'Library Layout: (.+)\n', qdata)
         if match:
             self['sequencing_type'] = match[0].split(',')[0].lower()
+        # Extract Run IDs associated with the sample
+        #Run #1: ERR276921, 1356661 spots, 271332200 bases
+        self.runIDs = re.findall(r'Run #\d+: (.+?),.+', qdata)
     def valid_metadata(self):
         '''
         Checks if metadata is valid
