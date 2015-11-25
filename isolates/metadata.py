@@ -404,3 +404,50 @@ class metadata_obj(object):
         else:
             geo_dict = location_hash[val]
         self.metadata.update(geo_dict)
+
+def ExtractExperimentMetadata(accession, json=None):
+    # Extract sample metadata
+    m = metadata_obj(accession, json)
+    return m
+
+def ExtractExperimentIDs(sample_accession):
+    ''' Extract experiments which have runs associated
+    >>> ExtractExperimentIDs('ERS397989')
+    ['ERX385098']
+    >>> ExtractExperimentIDs('SRS024887')
+    ['ERX538423', 'ERX530563', 'ERX530562', 'ERX012725', 'ERX183566', 'ERX012726', 'ERX064280']
+    '''
+    experiments = []
+    sra_url = 'http://www.ncbi.nlm.nih.gov/sra/?term=%s&format=text'
+    with openurl(sra_url%(sample_accession)) as u:
+        fline = ''
+        while fline == '':
+            fline = u.readline()
+            while '<' in fline:
+                start, end = fline.index('<'), fline.index('>')+1
+                if start > -1 and end > -1:
+                    fline = fline[:start] + fline[end:]
+                else: break
+            fline = fline.strip()
+        if not 'Build' in fline:
+            tmp = fline.split(':')
+            if tmp[0].strip() == 'Accession':
+                experiments.append(tmp[1].strip())
+        else:
+            x = None
+            for l in u:
+                l = l.strip()
+                if l == '':
+                    x = None
+                    continue
+                if ':' in l:
+                    tmp = l.split(':')
+                    if len(tmp[1]) > 3 and tmp[1][:3] in ['ERX', 'SRX']:
+                        x = tmp[1]
+                    if tmp[0] == 'Total' and x is not None:
+                        try: runs = int(tmp[1].split()[0])
+                        except: pass
+                        else:
+                            if runs > 0:
+                                experiments.append(x)
+    return experiments
