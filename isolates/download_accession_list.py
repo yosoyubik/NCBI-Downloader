@@ -231,7 +231,7 @@ def CreateSampleDir(sfiles, m, sample_dir, preserve=False):
     else:
         return True
 
-def download_fastq_from_list(accession_list, output, json, preserve=False):
+def download_fastq_from_list(accession_list, output, json, preserve=False, all_runs_as_samples=False):
     """
     Get Fastq from list of IDs
 
@@ -312,7 +312,7 @@ def download_fastq_from_list(accession_list, output, json, preserve=False):
                 m = ExtractSampleMetadata(accession, json)
                 if m.valid_metadata():
                     # E all runs associated to the experiment
-                    if args.all_runs_as_samples:
+                    if all_runs_as_samples:
                         for runid in m.runIDs:
                             with TemporaryDirectory() as tmpdir:
                                 os.chdir(batch_dir)
@@ -411,7 +411,7 @@ def download_accession_list():
                 exit()
         else:
             default = None
-        download_fastq_from_list(args.a[0], args.out[0], default, args.preserve)
+        download_fastq_from_list(args.a[0], args.out[0], default, args.preserve, args.all_runs_as_samples)
     else:
         print('Usage: -a PATH -o ORGANISM -out PATH [-m JSON]')
 
