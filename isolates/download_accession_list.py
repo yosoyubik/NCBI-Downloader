@@ -344,9 +344,11 @@ def download_fastq_from_list(accession_list, output, json, preserve=False, all_r
                             if not preserve or len(sfiles) == 0:
                                 sfiles = []
                                 for runid in m.runIDs:
-                                    if sfiles is not None:
-                                        sfiles.append(DownloadRunFiles(runid, tmpdir, _logger))
-                                    _logger.error("Run files could not be retrieved! (%s)"%runid)
+                                    sf = DownloadRunFiles(runid, tmpdir, _logger)
+                                    if sf is not None:
+                                        sfiles.append(sf)
+                                    else:
+                                        _logger.error("Run files could not be retrieved! (%s)"%runid)
                             if sfiles != []:
                                 # Combine sfiles into one entry
                                 csfiles = []
