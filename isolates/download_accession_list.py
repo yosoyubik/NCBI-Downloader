@@ -356,7 +356,7 @@ def download_fastq_from_list(accession_list, output, json, preserve=False, all_r
                                     new_file = "%s_%s.%s"%(fn.split('_')[0],file_no, ext)
                                     with open(new_file, 'w') as nf:
                                         for fn in file_set:
-                                            with open(fn, 'br') as f:
+                                            with open(fn, 'rb') as f:
                                                 nf.write(f.read())
                                     csfiles.append(new_file)
                                 if csfiles != []:
