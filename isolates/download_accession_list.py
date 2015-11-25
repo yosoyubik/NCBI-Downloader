@@ -309,11 +309,11 @@ def download_fastq_from_list(accession_list, output, json, preserve=False, all_r
 def ProcessExperiment(experiment_id, json, batch_dir, sample_dir_id, preserve, failed_accession, all_runs_as_samples):
     if all_runs_as_samples:
         sample_dir_id = ProcessExperimentSeparate(
-            accession, json, batch_dir, sample_dir_id,
+            experiment_id, json, batch_dir, sample_dir_id,
             preserve, failed_accession)
     else:
         sample_dir_id = ProcessExperimentCombined(
-            accession, json, batch_dir, sample_dir_id,
+            experiment_id, json, batch_dir, sample_dir_id,
             preserve, failed_accession)
     return sample_dir_id
 
