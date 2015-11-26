@@ -114,7 +114,7 @@ def GetCMD(prog, args):
 
 ceil = lambda a: int(a) + (a%1>0)
 
-if __name__ == "__main__":
+def main():
     args = parse_args(sys.argv[1:])
     if args.a is not None:
         experiments = SetupParallelDownload(args.a)
@@ -155,3 +155,6 @@ if __name__ == "__main__":
             print('No experiments could be found!')
     else:
         print('Usage: -a PATH -o ORGANISM -out PATH [-m JSON]')
+
+if __name__ == "__main__":
+    main()
