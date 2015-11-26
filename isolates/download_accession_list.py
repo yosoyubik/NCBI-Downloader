@@ -267,25 +267,7 @@ def download_fastq_from_list(accession_list, output, json, preserve=False, all_r
                 failed_accession.append(accession)
                 continue
             _logger.info("Acc Found: %s (%s)", accession, accession_type)
-            if accession_type == 'study':
-                # ToDo
-                # Find all associated samples
-                # Loop over all study samples
-                #   extract_sample_metadata()
-                #   Find all experiments for the given sample
-                #   Loop experiments
-                #     Find all runs associated to the experiment
-                #     download_run_files()
-                #     if option --all_runs_as_samples
-                #       loop runs
-                #         create_sample_dir()
-                #     else:
-                #       combine_runs_to_run()
-                #       create_sample_dir()
-                _logger.error("study accession are not supported yet! (%s)"%accession)
-                failed_accession.append(accession)
-                continue
-            elif accession_type == 'sample':
+            if accession_type in ['study', 'sample']:
                 for experiment_id in ExtractExperimentIDs(accession):
                     sample_dir_id = ProcessExperiment(
                         experiment_id, json, batch_dir,sample_dir_id, preserve,
@@ -374,15 +356,23 @@ def ProcessExperimentCombined(experiment_id, json, batch_dir, sample_dir_id, pre
             if sfiles != []:
                 # Combine sfiles into one entry
                 csfiles = []
-                for file_no, file_set in enumerate(zip(*sfiles)):
-                    fn = file_set[0].split('/')[-1]
-                    ext = '.'.join(fn.split('.')[1:])
-                    new_file = "%s_%s.%s"%(fn.split('_')[0],file_no, ext)
-                    with open(new_file, 'w') as nf:
-                        for fn in file_set:
-                            with open(fn, 'rb') as f:
-                                nf.write(f.read())
-                    csfiles.append(new_file)
+                if len(sfiles) > 1:
+                    for file_no, file_set in enumerate(zip(*sfiles)):
+                        fn = file_set[0].split('/')[-1]
+                        ext = '.'.join(fn.split('.')[1:])
+                        if '_' in fn: 
+                            new_file = "%s_%s.%s"%(fn.split('_')[0],file_no+1, ext)
+                        else:
+                            new_file = fn
+                        with open(new_file, 'w') as nf:
+                            for fn in file_set:
+                                with open(fn, 'rb') as f:
+                                    nf.write(f.read())
+                        csfiles.append(new_file)
+                elif isinstance(sfiles[0], list):
+                    csfile = sfiles[0]
+                else:
+                    csfile = sfiles
                 if csfiles != []:
                     success = CreateSampleDir(csfiles, m, sample_dir, preserve)
                     if success:
