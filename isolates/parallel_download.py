@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+''' Parallel NCBI download script '''
 import argparse
 from subprocess import Popen, PIPE
 from pipes import quote
