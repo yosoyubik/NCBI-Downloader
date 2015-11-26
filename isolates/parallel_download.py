@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 ''' Parallel NCBI download script '''
-import sys, argparse
+import sys, os, argparse
 from subprocess import Popen, PIPE
 from pipes import quote
 from download_accession_list import acctypes
+from isolates.metadata import ExtractExperimentIDs
 
 def parse_args(args):
     """
@@ -68,7 +69,7 @@ def SetupParallelDownload(accession_list):
     experiments = []
     failed_accession = []
     with open(accession_list, 'r') as f:
-        for i, l in enumerate(f):
+        for l in f:
             accession = l.strip()
             if accession == '': continue
             # Determine accession type
@@ -89,21 +90,6 @@ def SetupParallelDownload(accession_list):
     else:
         print("All accessions downloaded succesfully!")
     return experiments
-
-def download_accession_list():
-    args = parse_args_accessions(sys.argv[1:])
-    if args.a is not None:
-        if args.m is not None:
-            try:
-                default = json.load(args.m[0])
-            except ValueError as e:
-                print("ERROR: Json file has the wrong format!\n", e)
-                exit()
-        else:
-            default = None
-        download_fastq_from_list(args.a, args.out, default, args.preserve, args.all_runs_as_samples)
-    else:
-        print('Usage: -a PATH -o ORGANISM -out PATH [-m JSON]')
 
 def GetCMD(prog, args):
     cmd = [prog]
