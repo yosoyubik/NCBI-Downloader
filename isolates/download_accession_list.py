@@ -267,25 +267,7 @@ def download_fastq_from_list(accession_list, output, json, preserve=False, all_r
                 failed_accession.append(accession)
                 continue
             _logger.info("Acc Found: %s (%s)", accession, accession_type)
-            if accession_type == 'study':
-                # ToDo
-                # Find all associated samples
-                # Loop over all study samples
-                #   extract_sample_metadata()
-                #   Find all experiments for the given sample
-                #   Loop experiments
-                #     Find all runs associated to the experiment
-                #     download_run_files()
-                #     if option --all_runs_as_samples
-                #       loop runs
-                #         create_sample_dir()
-                #     else:
-                #       combine_runs_to_run()
-                #       create_sample_dir()
-                _logger.error("study accession are not supported yet! (%s)"%accession)
-                failed_accession.append(accession)
-                continue
-            elif accession_type == 'sample':
+            if accession_type in ['study', 'sample']:
                 for experiment_id in ExtractExperimentIDs(accession):
                     sample_dir_id = ProcessExperiment(
                         experiment_id, json, batch_dir,sample_dir_id, preserve,
