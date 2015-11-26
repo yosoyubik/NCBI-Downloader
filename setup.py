@@ -21,7 +21,7 @@ def setup_package():
 def install_shell_scripts():
     repo_dir = os.path.dirname(os.path.realpath(__file__))
     if not os.path.exists(repo_dir +"/env/bin/update"):
-        os.symlink(repo_dir +"update", repo_dir +"/env/bin/")
+        os.symlink(repo_dir +"/update", repo_dir +"/env/bin/")
 
 if __name__ == "__main__":
     setup_package()
