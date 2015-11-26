@@ -231,12 +231,6 @@ def download_fastq_from_list(accession_list, output, json, preserve=False, all_r
     :param accession_list: List of accessions
     :param dir: Output folder
     """
-    acctypes = flipdict({ # flipdict reverses the dictionary!
-        'study':        ['PRJ', 'SRP', 'ERP', 'DRP'],
-        'sample':       ['SAM', 'SRS', 'ERS', 'DRS'],
-        'experiment':   ['SRX', 'ERX', 'DRX'],
-        'run':          ['SRR', 'ERR', 'DRR']
-    })
     metadata = []
     cwd = os.getcwd()
     with open(accession_list, 'r') as f:
@@ -414,6 +408,13 @@ def download_bioproject():
         download_fastq_from_bioproject()
     else:
         _logger.error('Usage: [-b BIOPROJECTID ORGANISM PATH]')
+
+acctypes = flipdict({ # flipdict reverses the dictionary!
+    'study':        ['PRJ', 'SRP', 'ERP', 'DRP'],
+    'sample':       ['SAM', 'SRS', 'ERS', 'DRS'],
+    'experiment':   ['SRX', 'ERX', 'DRX'],
+    'run':          ['SRR', 'ERR', 'DRR']
+})
 
 if __name__ == "__main__":
     download_accession_list()
