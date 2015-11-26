@@ -123,7 +123,7 @@ def main():
                         '-out', str(batch_dir)
                         ]
                 if args.preserve: nargs.append('-p')
-                if args.m is not None: nargs.extend(['-m', args.m])
+                if args.m is not None: nargs.extend(['-m', "%s/%s"%(cwd,args.m)])
                 if args.all_runs_as_samples: nargs.append('--all_runs_as_samples')
                 cmd = GetCMD("download-accession-list", nargs)
                 # Execute batch download
