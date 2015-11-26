@@ -79,7 +79,7 @@ def SetupParallelDownload(accession_list):
                 print("unknown accession type for '%s'!"%accession)
                 failed_accession.append(accession)
                 continue
-            print("Acc Found: %s (%s)", accession, accession_type)
+            print("Acc Found: %s (%s)"%(accession, accession_type))
             if accession_type in ['study', 'sample']:
                 experiments.extend(ExtractExperimentIDs(accession))
             elif accession_type in ['experiment', 'run']:
@@ -94,7 +94,7 @@ def SetupParallelDownload(accession_list):
 def GetCMD(prog, args):
     cmd = [prog]
     cmd.extend([str(x) if not isinstance(x, (unicode)) else x.encode('utf-8')
-                for x in [quote(x) for x in self.args]])
+                for x in [quote(x) for x in args]])
     return ' '.join(cmd)
 
 ceil = lambda a: int(a) + (a%1>0)
