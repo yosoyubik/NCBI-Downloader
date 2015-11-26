@@ -26,8 +26,7 @@ def parse_args(args):
     )
     parser.add_argument(
         '-m',
-        type=argparse.FileType('r'),
-        metavar=('METADATA'),
+        metavar=('PATH'),
         default=None,
         help='JSON file with seed attributes and mandatory fields\n'
     )
@@ -120,10 +119,10 @@ def main():
                 with open(batch_acc_list, 'w') as f: f.write('\n'.join(eids))
                 # Prepare cmdline
                 nargs =['-a', batch_acc_list,
-                        '-m', args.m,
                         '-out', "%s/%s/"%(out_dir, batch_dir)
                         ]
                 if args.preserve: nargs.append('-p')
+                if args.m is not None: nargs.extend(['-m', args.m])
                 if args.all_runs_as_samples: nargs.append('--all_runs_as_samples')
                 cmd = GetCMD("download-accession-list", nargs)
                 # Execute batch download
