@@ -75,25 +75,24 @@ def SetupParallelDownload(accession_list):
             if accession[:3] in acctypes:
                 accession_type = acctypes[accession[:3]]
             else:
-                _logger.error("unknown accession type for '%s'!"%accession)
+                print("unknown accession type for '%s'!"%accession)
                 failed_accession.append(accession)
                 continue
-            _logger.info("Acc Found: %s (%s)", accession, accession_type)
+            print("Acc Found: %s (%s)", accession, accession_type)
             if accession_type in ['study', 'sample']:
                 experiments.extend(ExtractExperimentIDs(accession))
             elif accession_type in ['experiment', 'run']:
                 experiments.append(accession)
     if failed_accession:
-        _logger.info("The following accessions were not downloaded!")
-        _logger.info('\n'.join(failed_accession))
+        print("The following accessions were not downloaded!")
+        print('\n'.join(failed_accession))
     else:
-        _logger.info("All accessions downloaded succesfully!")
+        print("All accessions downloaded succesfully!")
     return experiments
 
 def download_accession_list():
     args = parse_args_accessions(sys.argv[1:])
     if args.a is not None:
-        _logger.info('Good!')
         if args.m is not None:
             try:
                 default = json.load(args.m[0])
