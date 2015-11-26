@@ -307,6 +307,7 @@ def download_fastq_from_list(accession_list, output, json, preserve=False, all_r
             _logger.info("All accessions downloaded succesfully!")
 
 def ProcessExperiment(experiment_id, json, batch_dir, sample_dir_id, preserve, failed_accession, all_runs_as_samples):
+    _logger.info("Processing %s..."%experiment_id)
     if all_runs_as_samples:
         sample_dir_id = ProcessExperimentSeparate(
             experiment_id, json, batch_dir, sample_dir_id,
@@ -323,6 +324,7 @@ def ProcessExperimentSeparate(experiment_id, json, batch_dir, sample_dir_id, pre
         # Check if a run ID was submitted, and if so only process that
         if experiment_id in m.runIDs: m.runIDs = [experiment_id]
         # Process the runIDs as samples
+        _logger.info("Found Following Runs: %s"%', '.join(m.runIDs))
         for runid in m.runIDs:
             with TemporaryDirectory() as tmpdir:
                 os.chdir(batch_dir)
@@ -353,6 +355,7 @@ def ProcessExperimentCombined(experiment_id, json, batch_dir, sample_dir_id, pre
         # Check if a run ID was submitted, and if so only process that
         if experiment_id in m.runIDs: m.runIDs = [experiment_id]
         # Process the runs as one sample
+        _logger.info("Found Following Runs: %s"%', '.join(m.runIDs))
         with TemporaryDirectory() as tmpdir:
             os.chdir(batch_dir)
             sample_dir = "%s/%s/"%(batch_dir, sample_dir_id)
