@@ -356,15 +356,23 @@ def ProcessExperimentCombined(experiment_id, json, batch_dir, sample_dir_id, pre
             if sfiles != []:
                 # Combine sfiles into one entry
                 csfiles = []
-                for file_no, file_set in enumerate(zip(*sfiles)):
-                    fn = file_set[0].split('/')[-1]
-                    ext = '.'.join(fn.split('.')[1:])
-                    new_file = "%s_%s.%s"%(fn.split('_')[0],file_no, ext)
-                    with open(new_file, 'w') as nf:
-                        for fn in file_set:
-                            with open(fn, 'rb') as f:
-                                nf.write(f.read())
-                    csfiles.append(new_file)
+                if len(sfiles) > 1:
+                    for file_no, file_set in enumerate(zip(*sfiles)):
+                        fn = file_set[0].split('/')[-1]
+                        ext = '.'.join(fn.split('.')[1:])
+                        if '_' in fn: 
+                            new_file = "%s_%s.%s"%(fn.split('_')[0],file_no+1, ext)
+                        else:
+                            new_file = fn
+                        with open(new_file, 'w') as nf:
+                            for fn in file_set:
+                                with open(fn, 'rb') as f:
+                                    nf.write(f.read())
+                        csfiles.append(new_file)
+                elif isinstance(sfiles[0], list):
+                    csfile = sfiles[0]
+                else:
+                    csfile = sfiles
                 if csfiles != []:
                     success = CreateSampleDir(csfiles, m, sample_dir, preserve)
                     if success:
