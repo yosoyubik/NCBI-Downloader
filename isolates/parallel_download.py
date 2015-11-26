@@ -108,6 +108,7 @@ def main():
             cwd = os.getcwd()
             out_dir = "%s/%s/"%(cwd, args.out)
             if not os.path.exists(out_dir): os.mkdir(out_dir)
+            os.chdir(out_dir)
             # Split experiments in batches
             epb = ceil(elen / float(args.nodes))
             batches = [experiments[s:s+epb] for s in xrange(0,elen,epb)]
@@ -119,7 +120,7 @@ def main():
                 with open(batch_acc_list, 'w') as f: f.write('\n'.join(eids))
                 # Prepare cmdline
                 nargs =['-a', batch_acc_list,
-                        '-out', "%s/%s/"%(out_dir, batch_dir)
+                        '-out', str(batch_dir)
                         ]
                 if args.preserve: nargs.append('-p')
                 if args.m is not None: nargs.extend(['-m', args.m])
