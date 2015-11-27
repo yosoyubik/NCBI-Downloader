@@ -116,7 +116,7 @@ def main():
             ps = []
             for batch_dir, eids in enumerate(batches):
                 # Save experiment IDs to file
-                batch_acc_list = "%s/%s.acc.txt"%(out_dir, batch_dir)
+                batch_acc_list = "%s/%s.acc"%(out_dir, batch_dir)
                 with open(batch_acc_list, 'w') as f: f.write('\n'.join(eids))
                 # Prepare cmdline
                 nargs =['-a', batch_acc_list,
