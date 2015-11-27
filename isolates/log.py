@@ -9,18 +9,15 @@ class log_obj():
    >>> _logger.error("error msg %s, %s", 'arg1', 'arg2')
    '''
    def __init__(self):
-        self.level=logging.INFO,
-        self.stream=sys.stdout,
-        self.format='%(levelname)s:%(message)s',
-        self.filemode='w'
+      pass
    def Set(self, filename='metadata.log'):
     # Setup of what?
     logging.basicConfig(
-        level=self.level,
-        stream=self.stream,
-        format=self.format,
+        level=logging.INFO,
+        stream=sys.stdout,
+        format='%(levelname)s:%(message)s',
         filename=filename,
-        filemode=self.filemode
+        filemode='w'
     )
     self.logger = logging.getLogger(__name__)
    def debug(self, *msg):
