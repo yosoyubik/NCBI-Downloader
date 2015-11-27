@@ -15,12 +15,18 @@ from datetime import datetime
 from email.mime.text import MIMEText
 from subprocess import Popen, PIPE
 
-from isolates.log import _logger
+import isolates.log 
 import isolates.download_accession_list
-from isolates.source import ontology, platforms, location_hash
-from isolates.template import metadata as metadata_template, default as default_metadata
+import isolates.source 
+import isolates.template 
 
+_logger = isolates.log._logger
 acctypes = download_accession_list.acctypes
+ontology = isolates.source.ontology
+platforms = isolates.source.platforms
+location_hash = isolates.source.location_hash
+metadata_template = isolates.template.metadata
+default_metadata = isolates.template.default
 
 ceil = lambda a: int(a) + (a%1>0)
 

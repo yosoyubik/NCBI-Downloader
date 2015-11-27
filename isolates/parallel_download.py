@@ -5,11 +5,14 @@ import sys, os, argparse
 from subprocess import Popen, PIPE
 from pipes import quote
 
+from isolates import __version__
 import isolates.download_accession_list
-from isolates.metadata import (ceil, ExtractExperimentIDs_acc,
-                               ExtractExperimentIDs_tax)
+import isolates.metadata
 
-acctypes = download_accession_list.acctypes
+acctypes = isolates.download_accession_list.acctypes
+ceil = isolates.metadata.ceil
+ExtractExperimentIDs_acc = isolates.metadata.ExtractExperimentIDs_acc
+ExtractExperimentIDs_tax = isolates.metadata.ExtractExperimentIDs_tax
 
 def parse_args(args):
     """
@@ -21,6 +24,11 @@ def parse_args(args):
     parser = argparse.ArgumentParser(
         description="Download script of isolates from" +
                     "ENA taxonomy or Accession list")
+    parser.add_argument(
+        '-v',
+        '--version',
+        action='version',
+        version='isolates {ver}'.format(ver=__version__))
     parser.add_argument(
         '-a',
         metavar=('PATH'),

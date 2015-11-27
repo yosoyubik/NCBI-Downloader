@@ -31,9 +31,12 @@ from pprint import pprint as pp
 from subprocess import call
 from progressbar import Bar, Percentage, ProgressBar, ETA
 
-from isolates.metadata import MetadataBioSample
-from isolates.sequence import Sequence
 from isolates import __version__
+import isolates.metadata
+import isolates.sequence
+
+MetadataBioSample = isolates.metadata.MetadataBioSample
+Sequence = isolates.sequence.Sequence
 
 __author__ = "Jose Luis Bellod Cisneros"
 __copyright__ = "Jose Luis Bellod Cisneros"

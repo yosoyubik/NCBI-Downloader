@@ -30,10 +30,15 @@ from tempfile import mkdtemp
 from subprocess import call
 from progressbar import Bar, Percentage, ProgressBar, ETA
 
-from isolates.log import _logger
-from isolates.metadata import ExtractExperimentMetadata, ExtractExperimentIDs
-from isolates.sequence import Sequence
 from isolates import __version__
+import isolates.log
+import isolates.metadata 
+import isolates.sequence 
+
+_logger = isolates.log._logger
+ExtractExperimentMetadata = isolates.metadata.ExtractExperimentMetadata
+ExtractExperimentIDs_acc = isolates.metadata.ExtractExperimentIDs_acc
+Sequence = isolates.sequence.Sequence
 
 __author__ = "Jose Luis Bellod Cisneros"
 __coauthor__ = "Martin C F Thomsen"
@@ -97,7 +102,6 @@ def parse_args_bioproject(args):
         '--version',
         action='version',
         version='isolates {ver}'.format(ver=__version__))
-
     parser.add_argument(
         '-b',
         nargs=3,
@@ -256,7 +260,7 @@ def download_fastq_from_list(accession_list, output, json, preserve=False, all_r
                 continue
             _logger.info("Acc Found: %s (%s)", accession, accession_type)
             if accession_type in ['study', 'sample']:
-                for experiment_id in ExtractExperimentIDs(accession):
+                for experiment_id in ExtractExperimentIDs_acc(accession):
                     sample_dir_id = ProcessExperiment(
                         experiment_id, json, batch_dir,sample_dir_id, preserve,
                         failed_accession, all_runs_as_samples)
