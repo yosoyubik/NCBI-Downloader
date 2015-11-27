@@ -30,7 +30,7 @@ from tempfile import mkdtemp
 from subprocess import call
 from progressbar import Bar, Percentage, ProgressBar, ETA
 
-from log import _logger
+from isolates.log import _logger
 from isolates.metadata import ExtractExperimentMetadata, ExtractExperimentIDs
 from isolates.sequence import Sequence
 from isolates import __version__

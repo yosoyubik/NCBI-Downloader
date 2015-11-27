@@ -17,7 +17,7 @@ import socket
 from email.mime.text import MIMEText
 from subprocess import Popen, PIPE
 
-from log import _logger
+from isolates.log import _logger
 
 class openurl(object):
     ''' urllib library wrapper, to make it easier to use.

@@ -11,7 +11,7 @@ import copy
 from path import Path
 from subprocess import call, PIPE
 
-from log import _logger
+from isolates.log import _logger
 
 class Sequence(object):
 
