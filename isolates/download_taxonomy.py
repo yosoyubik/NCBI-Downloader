@@ -35,8 +35,8 @@ from isolates import __version__
 import isolates.metadata
 import isolates.sequence
 
-MetadataBioSample = isolates.metadata.MetadataBioSample
-Sequence = isolates.sequence.Sequence
+MetadataBioSample = metadata.MetadataBioSample
+Sequence = sequence.Sequence
 
 __author__ = "Jose Luis Bellod Cisneros"
 __copyright__ = "Jose Luis Bellod Cisneros"

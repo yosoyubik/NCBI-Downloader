@@ -20,13 +20,13 @@ import isolates.download_accession_list
 import isolates.source 
 import isolates.template 
 
-_logger = isolates.log._logger
+_logger = log._logger
 acctypes = download_accession_list.acctypes
-ontology = isolates.source.ontology
-platforms = isolates.source.platforms
-location_hash = isolates.source.location_hash
-metadata_template = isolates.template.metadata
-default_metadata = isolates.template.default
+ontology = source.ontology
+platforms = source.platforms
+location_hash = source.location_hash
+metadata_template = template.metadata
+default_metadata = template.default
 
 ceil = lambda a: int(a) + (a%1>0)
 
