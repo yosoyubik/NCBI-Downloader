@@ -231,7 +231,7 @@ def download_fastq_from_list(accession_list, output, json, preserve=False, all_r
         if not os.path.exists(batch_dir): os.mkdir(batch_dir)
         os.chdir(batch_dir)
         # Set logging
-        _logger.Set(filename="%s/metadata.log"%batch_dir)
+        _logger.Set(filename="%s/download-acceession-list.log"%batch_dir)
         # Count samples in accession_list
         n_samples = sum(1 for l in f)
         f.seek(0)
@@ -329,11 +329,10 @@ def ProcessExperimentCombined(experiment_id, json, batch_dir, sample_dir_id, pre
         with TemporaryDirectory() as tmpdir:
             os.chdir(batch_dir)
             sample_dir = "%s/%s/"%(batch_dir, sample_dir_id)
-            if os.path.exists(sample_dir):
-                sfiles = [x for x in os.listdir(sample_dir) if any([y in x for y in ['fq','fastq']])]
-            else:
-                sfiles = []
-            if not preserve or len(sfiles) == 0:
+            csfiles = []
+            if preserve and os.path.exists(sample_dir):
+                csfiles = [x for x in os.listdir(sample_dir) if any([y in x for y in ['fq','fastq']])]
+            if csfiles ==[]:
                 sfiles = []
                 for runid in m.runIDs:
                     sf = DownloadRunFiles(runid, tmpdir)
@@ -341,35 +340,34 @@ def ProcessExperimentCombined(experiment_id, json, batch_dir, sample_dir_id, pre
                         sfiles.append(sf)
                     else:
                         _logger.error("Run files could not be retrieved! (%s)"%runid)
-            if sfiles != []:
                 _logger.info("Found Following files sets:\n%s\n"%'\n'.join([', '.join(sf) for sf in sfiles]))
                 # Combine sfiles into one entry
-                csfiles = []
                 if len(sfiles) > 1:
                     for file_no, file_set in enumerate(zip(*sfiles)):
-                        fn = file_set[0].split('/')[-1]
-                        ext = '.'.join(fn.split('.')[1:])
-                        if '_' in fn: 
-                            new_file = "%s_%s.%s"%(fn.split('_')[0],file_no+1, ext)
+                        ext = '.'.join(file_set[0].split('/')[-1].split('.')[1:])
+                        if len(sfiles[0]) > 1:
+                            new_file = "%s_%s.combined.%s"%(experiment_id,file_no+1, ext)
                         else:
-                            new_file = fn
+                            new_file = "%s.combined.%s"%(experiment_id, ext)
                         with open(new_file, 'w') as nf:
                             for fn in file_set:
                                 with open(fn, 'rb') as f:
                                     nf.write(f.read())
-                        csfiles.append(new_file)
+                        if os.path.exists(new_file):
+                            csfiles.append(new_file)
+                        else:
+                            _logger.error("Combined file creation failed! (%s: %s)"%(experiment_id, file_no))
+                            break
                 elif isinstance(sfiles[0], list):
-                    csfile = sfiles[0]
-                else:
-                    csfile = sfiles
-                if csfiles != []:
-                    success = CreateSampleDir(csfiles, m, sample_dir, preserve)
-                    if success:
-                        sample_dir_id += 1
-                    else:
-                        failed_accession.append(experiment_id)
-                else:
+                    csfiles = sfiles[0]
+                if csfiles == []:
                     _logger.error("Files could not be combined! (%s)"%experiment_id)
+                    failed_accession.append(experiment_id)
+            if csfiles != []:
+                success = CreateSampleDir(csfiles, m, sample_dir, preserve)
+                if success:
+                    sample_dir_id += 1
+                else:
                     failed_accession.append(experiment_id)
             else:
                 _logger.error("Files could not be retrieved! (%s)"%experiment_id)
