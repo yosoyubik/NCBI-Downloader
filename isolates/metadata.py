@@ -10,14 +10,17 @@ import sys
 import json
 import io
 import geocoder
-from datetime import datetime
-from source import ontology, platforms, location_hash
-from template import metadata as metadata_template, default as default_metadata
 import socket
+from datetime import datetime
 from email.mime.text import MIMEText
 from subprocess import Popen, PIPE
 
 from isolates.log import _logger
+from download_accession_list import acctypes
+from source import ontology, platforms, location_hash
+from template import metadata as metadata_template, default as default_metadata
+
+ceil = lambda a: int(a) + (a%1>0)
 
 class openurl(object):
     ''' urllib library wrapper, to make it easier to use.
@@ -401,7 +404,7 @@ def ExtractExperimentMetadata(accession, json=None):
     m = metadata_obj(accession, json)
     return m
 
-def ExtractExperimentIDs(sample_accession):
+def ExtractExperimentIDs_acc(sample_accession):
     ''' Extract experiments which have runs associated
     >>> ExtractExperimentIDs('ERS397989')
     ['ERX385098']
@@ -441,4 +444,40 @@ def ExtractExperimentIDs(sample_accession):
                         else:
                             if runs > 0:
                                 experiments.append(x)
+    return experiments
+
+def ExtractExperimentIDs_tax(taxid):
+    ''' Extract experiments which have runs associated from taxid
+    >>> ExtractExperimentIDs_tax('211968')
+    ['SRX1308653', 'SRX1308716', 'SRX1308789', 'SRX1308879', 'SRX337751']
+    '''
+    ena_url = ('http://www.ebi.ac.uk/ena/data/warehouse/search?'
+               'query="tax_tree(%s)"&'
+               'result=read_experiment')%(taxid)
+    countquery = '&resultcount'
+    display = '&display=report&fields=experiment_accession'
+    # Find number of entries for the provided taxid 
+    count = 0
+    with openurl(ena_url+countquery) as u:
+        for l in u:
+            l = l.strip()
+            if ':' in l:
+                tmp = l.split(':')
+                if tmp[0] == 'Number of results':
+                    count = int(tmp[1].replace(',',''))
+    # Extract experiment IDs
+    experiments = []
+    if count > 0:
+        length = 100000
+        pages = ceil(count/float(length))
+        for p in xrange(pages):
+            page_offset = '&offset=%s&length=%s'%(p*length+1, length)
+            with openurl(ena_url+display+page_offset) as u:
+                header = u.readline()
+                for l in u:
+                    l = l.strip()
+                    if l[:3] in acctypes and acctypes[l[:3]] == 'experiment':
+                        experiments.append(l)
+                    else:
+                        print("Unknown Experiment ID: %s (taxid=%s)"%(l,taxid))
     return experiments
