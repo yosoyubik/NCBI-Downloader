@@ -4,11 +4,11 @@
 import sys, os, argparse
 from subprocess import Popen, PIPE
 from pipes import quote
-import download_accession_list as dal
+import download_accession_list
 from isolates.metadata import (ceil, ExtractExperimentIDs_acc,
                                ExtractExperimentIDs_tax)
 
-acctypes = dal.acctypes
+acctypes = download_accession_list.acctypes
 
 def parse_args(args):
     """
