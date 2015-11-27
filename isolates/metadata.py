@@ -6,7 +6,6 @@
 import re
 import urllib
 import copy
-import logging
 import sys
 import json
 import io
@@ -18,15 +17,7 @@ import socket
 from email.mime.text import MIMEText
 from subprocess import Popen, PIPE
 
-# Setup of what?
-logging.basicConfig(
-    level=logging.INFO,
-    stream=sys.stdout,
-    format='%(levelname)s:%(message)s',
-    filename='metadata.log',
-    filemode='w'
-)
-_logger = logging.getLogger(__name__)
+from isolates.log import _logger
 
 class openurl(object):
     ''' urllib library wrapper, to make it easier to use.

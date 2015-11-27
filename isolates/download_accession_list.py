@@ -20,7 +20,6 @@ import sys
 import re
 import json
 import argparse
-import logging
 import urllib
 import pandas as pd
 from StringIO import StringIO
@@ -28,10 +27,10 @@ from path import Path
 from pprint import pprint as pp
 from shutil import rmtree, move
 from tempfile import mkdtemp
-
 from subprocess import call
 from progressbar import Bar, Percentage, ProgressBar, ETA
 
+from isolates.log import _logger
 from isolates.metadata import ExtractExperimentMetadata, ExtractExperimentIDs
 from isolates.sequence import Sequence
 from isolates import __version__
@@ -40,13 +39,6 @@ __author__ = "Jose Luis Bellod Cisneros"
 __coauthor__ = "Martin C F Thomsen"
 __copyright__ = "Jose Luis Bellod Cisneros"
 __license__ = "none"
-
-logging.basicConfig(
-    level=logging.INFO,
-    stream=sys.stdout,
-    format='%(levelname)s:%(message)s'
-)
-_logger = logging.getLogger(__name__)
 
 # CLASSES
 class TemporaryDirectory(object):
@@ -180,7 +172,7 @@ def parse_args_accessions(args):
     )
     return parser.parse_args(args)
 
-def DownloadRunFiles(runid, tmpdir, _logger):
+def DownloadRunFiles(runid, tmpdir):
     # Download run files
     try:
         s = Sequence(runid, tmpdir)
@@ -231,12 +223,6 @@ def download_fastq_from_list(accession_list, output, json, preserve=False, all_r
     :param accession_list: List of accessions
     :param dir: Output folder
     """
-    acctypes = flipdict({ # flipdict reverses the dictionary!
-        'study':        ['PRJ', 'SRP', 'ERP', 'DRP'],
-        'sample':       ['SAM', 'SRS', 'ERS', 'DRS'],
-        'experiment':   ['SRX', 'ERX', 'DRX'],
-        'run':          ['SRR', 'ERR', 'DRR']
-    })
     metadata = []
     cwd = os.getcwd()
     with open(accession_list, 'r') as f:
@@ -244,6 +230,8 @@ def download_fastq_from_list(accession_list, output, json, preserve=False, all_r
         batch_dir = "%s/%s/"%(cwd, output)
         if not os.path.exists(batch_dir): os.mkdir(batch_dir)
         os.chdir(batch_dir)
+        # Set logging
+        _logger.Set(filename="%s/download-acceession-list.log"%batch_dir)
         # Count samples in accession_list
         n_samples = sum(1 for l in f)
         f.seek(0)
@@ -316,7 +304,7 @@ def ProcessExperimentSeparate(experiment_id, json, batch_dir, sample_dir_id, pre
                 else:
                     sfiles = []
                 if not preserve or len(sfiles) == 0:
-                    sfiles = DownloadRunFiles(runid, tmpdir, _logger)
+                    sfiles = DownloadRunFiles(runid, tmpdir)
                 if sfiles is not None:
                     success = CreateSampleDir(sfiles, m, sample_dir, preserve)
                     if success:
@@ -341,46 +329,45 @@ def ProcessExperimentCombined(experiment_id, json, batch_dir, sample_dir_id, pre
         with TemporaryDirectory() as tmpdir:
             os.chdir(batch_dir)
             sample_dir = "%s/%s/"%(batch_dir, sample_dir_id)
-            if os.path.exists(sample_dir):
-                sfiles = [x for x in os.listdir(sample_dir) if any([y in x for y in ['fq','fastq']])]
-            else:
-                sfiles = []
-            if not preserve or len(sfiles) == 0:
+            csfiles = []
+            if preserve and os.path.exists(sample_dir):
+                csfiles = [x for x in os.listdir(sample_dir) if any([y in x for y in ['fq','fastq']])]
+            if csfiles ==[]:
                 sfiles = []
                 for runid in m.runIDs:
-                    sf = DownloadRunFiles(runid, tmpdir, _logger)
+                    sf = DownloadRunFiles(runid, tmpdir)
                     if sf is not None:
                         sfiles.append(sf)
                     else:
                         _logger.error("Run files could not be retrieved! (%s)"%runid)
-            if sfiles != []:
+                _logger.info("Found Following files sets:\n%s\n"%'\n'.join([', '.join(sf) for sf in sfiles]))
                 # Combine sfiles into one entry
-                csfiles = []
                 if len(sfiles) > 1:
                     for file_no, file_set in enumerate(zip(*sfiles)):
-                        fn = file_set[0].split('/')[-1]
-                        ext = '.'.join(fn.split('.')[1:])
-                        if '_' in fn: 
-                            new_file = "%s_%s.%s"%(fn.split('_')[0],file_no+1, ext)
+                        ext = '.'.join(file_set[0].split('/')[-1].split('.')[1:])
+                        if len(sfiles[0]) > 1:
+                            new_file = "%s_%s.combined.%s"%(experiment_id,file_no+1, ext)
                         else:
-                            new_file = fn
+                            new_file = "%s.combined.%s"%(experiment_id, ext)
                         with open(new_file, 'w') as nf:
                             for fn in file_set:
                                 with open(fn, 'rb') as f:
                                     nf.write(f.read())
-                        csfiles.append(new_file)
+                        if os.path.exists(new_file):
+                            csfiles.append(new_file)
+                        else:
+                            _logger.error("Combined file creation failed! (%s: %s)"%(experiment_id, file_no))
+                            break
                 elif isinstance(sfiles[0], list):
-                    csfile = sfiles[0]
-                else:
-                    csfile = sfiles
-                if csfiles != []:
-                    success = CreateSampleDir(csfiles, m, sample_dir, preserve)
-                    if success:
-                        sample_dir_id += 1
-                    else:
-                        failed_accession.append(experiment_id)
-                else:
+                    csfiles = sfiles[0]
+                if csfiles == []:
                     _logger.error("Files could not be combined! (%s)"%experiment_id)
+                    failed_accession.append(experiment_id)
+            if csfiles != []:
+                success = CreateSampleDir(csfiles, m, sample_dir, preserve)
+                if success:
+                    sample_dir_id += 1
+                else:
                     failed_accession.append(experiment_id)
             else:
                 _logger.error("Files could not be retrieved! (%s)"%experiment_id)
@@ -393,7 +380,6 @@ def ProcessExperimentCombined(experiment_id, json, batch_dir, sample_dir_id, pre
 def download_accession_list():
     args = parse_args_accessions(sys.argv[1:])
     if args.a is not None:
-        _logger.info('Good!')
         if args.m is not None:
             try:
                 default = json.load(args.m[0])
@@ -407,13 +393,18 @@ def download_accession_list():
         print('Usage: -a PATH -o ORGANISM -out PATH [-m JSON]')
 
 def download_bioproject():
-    # logging.basicConfig(level=logging.INFO, stream=sys.stdout)
     args = parse_args_bioproject(sys.argv[1:])
     if args.b is not None:
-        _logger.info('Good!')
         download_fastq_from_bioproject()
     else:
         _logger.error('Usage: [-b BIOPROJECTID ORGANISM PATH]')
+
+acctypes = flipdict({ # flipdict reverses the dictionary!
+    'study':        ['PRJ', 'SRP', 'ERP', 'DRP'],
+    'sample':       ['SAM', 'SRS', 'ERS', 'DRS'],
+    'experiment':   ['SRX', 'ERX', 'DRX'],
+    'run':          ['SRR', 'ERR', 'DRR']
+})
 
 if __name__ == "__main__":
     download_accession_list()
