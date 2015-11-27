@@ -348,6 +348,7 @@ def ProcessExperimentCombined(experiment_id, json, batch_dir, sample_dir_id, pre
                     else:
                         _logger.error("Run files could not be retrieved! (%s)"%runid)
             if sfiles != []:
+                _logger.info("Found Following files sets:\n%s\n"%'\n'.join([', '.join(sf) for sf in sfiles]))
                 # Combine sfiles into one entry
                 csfiles = []
                 if len(sfiles) > 1:
@@ -387,7 +388,6 @@ def ProcessExperimentCombined(experiment_id, json, batch_dir, sample_dir_id, pre
 def download_accession_list():
     args = parse_args_accessions(sys.argv[1:])
     if args.a is not None:
-        _logger.info('Good!')
         if args.m is not None:
             try:
                 default = json.load(args.m[0])

@@ -30,9 +30,9 @@ class Sequence(object):
     __sequence_id = 0
 
     def __init__(self, accession, dir):
-        if accession == '':
-            raise ValueError('Accession can not be empty')
         self.accession = accession.strip()
+        if self.accession == '':
+            raise ValueError('Accession can not be empty')
         self.dir = '%s/%s/' % (dir, str(Sequence.__sequence_id))
         Path(self.dir).makedirs_p()
         self.files = []
