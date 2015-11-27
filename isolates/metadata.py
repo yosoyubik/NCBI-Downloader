@@ -16,9 +16,11 @@ from email.mime.text import MIMEText
 from subprocess import Popen, PIPE
 
 from isolates.log import _logger
-from download_accession_list import acctypes
+import download_accession_list as dal
 from source import ontology, platforms, location_hash
 from template import metadata as metadata_template, default as default_metadata
+
+acctypes = dal.acctypes
 
 ceil = lambda a: int(a) + (a%1>0)
 
