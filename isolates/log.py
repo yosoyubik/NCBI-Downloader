@@ -13,7 +13,7 @@ class log_obj():
         self.stream=sys.stdout,
         self.format='%(levelname)s:%(message)s',
         self.filemode='w'
-   def Set(filename='metadata.log'):
+   def Set(self, filename='metadata.log'):
     # Setup of what?
     logging.basicConfig(
         level=self.level,
