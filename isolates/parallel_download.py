@@ -4,7 +4,8 @@
 import sys, os, argparse
 from subprocess import Popen, PIPE
 from pipes import quote
-import download_accession_list
+
+import isolates.download_accession_list
 from isolates.metadata import (ceil, ExtractExperimentIDs_acc,
                                ExtractExperimentIDs_tax)
 

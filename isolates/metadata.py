@@ -16,9 +16,9 @@ from email.mime.text import MIMEText
 from subprocess import Popen, PIPE
 
 from isolates.log import _logger
-import download_accession_list
-from source import ontology, platforms, location_hash
-from template import metadata as metadata_template, default as default_metadata
+import isolates.download_accession_list
+from isolates.source import ontology, platforms, location_hash
+from isolates.template import metadata as metadata_template, default as default_metadata
 
 acctypes = download_accession_list.acctypes
 
