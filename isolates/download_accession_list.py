@@ -172,7 +172,7 @@ def parse_args_accessions(args):
     )
     return parser.parse_args(args)
 
-def DownloadRunFiles(runid, tmpdir, _logger):
+def DownloadRunFiles(runid, tmpdir):
     # Download run files
     try:
         s = Sequence(runid, tmpdir)
@@ -230,6 +230,8 @@ def download_fastq_from_list(accession_list, output, json, preserve=False, all_r
         batch_dir = "%s/%s/"%(cwd, output)
         if not os.path.exists(batch_dir): os.mkdir(batch_dir)
         os.chdir(batch_dir)
+        # Set logging
+        _logger.Set(filename="%s/metadata.log"%batch_dir)
         # Count samples in accession_list
         n_samples = sum(1 for l in f)
         f.seek(0)
@@ -302,7 +304,7 @@ def ProcessExperimentSeparate(experiment_id, json, batch_dir, sample_dir_id, pre
                 else:
                     sfiles = []
                 if not preserve or len(sfiles) == 0:
-                    sfiles = DownloadRunFiles(runid, tmpdir, _logger)
+                    sfiles = DownloadRunFiles(runid, tmpdir)
                 if sfiles is not None:
                     success = CreateSampleDir(sfiles, m, sample_dir, preserve)
                     if success:
@@ -395,7 +397,6 @@ def download_accession_list():
 def download_bioproject():
     args = parse_args_bioproject(sys.argv[1:])
     if args.b is not None:
-        _logger.info('Good!')
         download_fastq_from_bioproject()
     else:
         _logger.error('Usage: [-b BIOPROJECTID ORGANISM PATH]')
