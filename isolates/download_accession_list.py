@@ -30,15 +30,16 @@ from tempfile import mkdtemp
 from subprocess import call
 from progressbar import Bar, Percentage, ProgressBar, ETA
 
-from isolates import __version__
+import isolates
 import isolates.log
 import isolates.metadata 
 import isolates.sequence 
 
-_logger = log._logger
-ExtractExperimentMetadata = metadata.ExtractExperimentMetadata
-ExtractExperimentIDs_acc = metadata.ExtractExperimentIDs_acc
-Sequence = sequence.Sequence
+__version__ = isolates.__version__
+_logger = isolates.log._logger
+ExtractExperimentMetadata = isolates.metadata.ExtractExperimentMetadata
+ExtractExperimentIDs_acc = isolates.metadata.ExtractExperimentIDs_acc
+Sequence = isolates.sequence.Sequence
 
 __author__ = "Jose Luis Bellod Cisneros"
 __coauthor__ = "Martin C F Thomsen"
