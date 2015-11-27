@@ -8,20 +8,10 @@ from source import ontology, platforms, location_hash
 import re
 import urllib
 import copy
-import logging
-import sys
 from path import Path
 from subprocess import call, PIPE
 
-logging.basicConfig(
-    level=logging.INFO,
-    stream=sys.stdout,
-    format='%(levelname)s:%(message)s',
-    filename='sequence.log',
-    filemode='w'
-)
-_logger = logging.getLogger(__name__)
-
+from isolates.log import _logger
 
 class Sequence(object):
 
@@ -30,9 +20,9 @@ class Sequence(object):
     __sequence_id = 0
 
     def __init__(self, accession, dir):
-        if accession == '':
-            raise ValueError('Accession can not be empty')
         self.accession = accession.strip()
+        if self.accession == '':
+            raise ValueError('Accession can not be empty')
         self.dir = '%s/%s/' % (dir, str(Sequence.__sequence_id))
         Path(self.dir).makedirs_p()
         self.files = []

@@ -6,7 +6,6 @@
 import re
 import urllib
 import copy
-import logging
 import sys
 import json
 import io
@@ -18,15 +17,7 @@ import socket
 from email.mime.text import MIMEText
 from subprocess import Popen, PIPE
 
-# Setup of what?
-logging.basicConfig(
-    level=logging.INFO,
-    stream=sys.stdout,
-    format='%(levelname)s:%(message)s',
-    filename='metadata.log',
-    filemode='w'
-)
-_logger = logging.getLogger(__name__)
+from isolates.log import _logger
 
 class openurl(object):
     ''' urllib library wrapper, to make it easier to use.
@@ -57,14 +48,16 @@ class mail_obj():
    >>> mail = mail_obj(['to_me@domain.com'], 'from_me@domain.com')
    >>> mail.send('Hello my subject!','Hello my body!')
    '''
-   def __init__(self, recepients, sender):
+   def __init__(self, recepients, sender, reply):
       self.to = recepients
       self.fr = sender
+      self.rt = reply
    def send(self, subject, message):
       '''  '''
       msg = MIMEText(message)
-      msg["From"] = self.fr
       msg["To"] = ', '.join(self.to) if isinstance(self.to, list) else self.to
+      msg["From"] = self.fr
+      msg["Reply-To"] = self.rt
       msg["Subject"] = subject
       p = Popen(["sendmail -r %s %s"%(self.fr, ' '.join(self.to))],
                 shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE)
@@ -72,8 +65,14 @@ class mail_obj():
       p.wait()
 
 # Setup Mail Wrapper
-if 'cbs.dtu.dk' in socket.getfqdn() or 'computerome' in socket.getfqdn():
-    mail = mail_obj(['mcft@cbs.dtu.dk'], 'mcft@cbs.dtu.dk') #cgehelp
+if 'cbs.dtu.dk' in socket.getfqdn():
+    mail = mail_obj(['mcft@cbs.dtu.dk'],
+                    'mail-deamon@computerome.dtu.dk',
+                    'cgehelp@cbs.dtu.dk')
+elif 'computerome' in socket.getfqdn():
+    mail = mail_obj(['mcft@cbs.dtu.dk'],
+                    'mail-deamon@cbs.dtu.dk',
+                    'cgehelp@cbs.dtu.dk')
 else:
     mail = None
 
@@ -213,6 +212,9 @@ class metadata_obj(object):
         match = re.findall(r'Library Layout: (.+)\n', qdata)
         if match:
             self['sequencing_type'] = match[0].split(',')[0].lower()
+        # Extract Run IDs associated with the sample
+        #Run #1: ERR276921, 1356661 spots, 271332200 bases
+        self.runIDs = re.findall(r'Run #\d+: (.+?),.+', qdata)
     def valid_metadata(self):
         '''
         Checks if metadata is valid
@@ -393,3 +395,50 @@ class metadata_obj(object):
         else:
             geo_dict = location_hash[val]
         self.metadata.update(geo_dict)
+
+def ExtractExperimentMetadata(accession, json=None):
+    # Extract sample metadata
+    m = metadata_obj(accession, json)
+    return m
+
+def ExtractExperimentIDs(sample_accession):
+    ''' Extract experiments which have runs associated
+    >>> ExtractExperimentIDs('ERS397989')
+    ['ERX385098']
+    >>> ExtractExperimentIDs('SRS024887')
+    ['ERX538423', 'ERX530563', 'ERX530562', 'ERX012725', 'ERX183566', 'ERX012726', 'ERX064280']
+    '''
+    experiments = []
+    sra_url = 'http://www.ncbi.nlm.nih.gov/sra/?term=%s&format=text'
+    with openurl(sra_url%(sample_accession)) as u:
+        fline = ''
+        while fline == '':
+            fline = u.readline()
+            while '<' in fline:
+                start, end = fline.index('<'), fline.index('>')+1
+                if start > -1 and end > -1:
+                    fline = fline[:start] + fline[end:]
+                else: break
+            fline = fline.strip()
+        if not 'Build' in fline:
+            tmp = fline.split(':')
+            if tmp[0].strip() == 'Accession':
+                experiments.append(tmp[1].strip())
+        else:
+            x = None
+            for l in u:
+                l = l.strip()
+                if l == '':
+                    x = None
+                    continue
+                if ':' in l:
+                    tmp = l.split(':')
+                    if len(tmp[1]) > 3 and tmp[1][:3] in ['ERX', 'SRX']:
+                        x = tmp[1]
+                    if tmp[0] == 'Total' and x is not None:
+                        try: runs = int(tmp[1].split()[0])
+                        except: pass
+                        else:
+                            if runs > 0:
+                                experiments.append(x)
+    return experiments

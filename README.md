@@ -39,18 +39,45 @@ This will install the python dependencies and create two entry points
 
 - download-accession-list
     ```bash
-        usage: download-accession-list [-h] [-v] [-a PATH] [-m METADATA] -out OUTPUT
+         usage: download-accession-list [-h] [--version] [-a PATH] [-m METADATA] [-p]
+                                       [--all_runs_as_samples] -out OUTPUT
+         
+         Download script of isolates fromENA taxonomy or Accession list
+         
+         optional arguments:
+         -h, --help            show this help message and exit
+         --version             show program's version number and exit
+         -a PATH               Format: [PATH] to file containing list of ACCESSION
+                                 IDs, 1 per line Name of the file is used to identify
+                                 the isolates downloaded.
+         -m METADATA           JSON file with seed attributes and mandatory fields
+         -p, --preserve        preserve any existing SRA and fastq files
+         --all_runs_as_samples
+                                 Treat all runs associated to a sample as separate
+                                 samples. Default is to combine them into one run.
+         -out OUTPUT           Path to save isolates
+    ```
 
+- parallel-download
+    ```bash
+        usage: parallel-download [-h] [-a PATH] [-m METADATA] [-p]
+                                [--all_runs_as_samples] [-n NODES] -out OUTPUT
+        
         Download script of isolates fromENA taxonomy or Accession list
-
+        
         optional arguments:
-          -h, --help     show this help message and exit
-          -v, --version  show version number and exit
-          -a PATH        Format: [PATH] to file containing list of ACCESSION IDs, 1
-                         per line Name of the file is used to identify the isolates
-                         downloaded.
-          -m METADATA    JSON file with seed attributes and mandatory fields
-          -out OUTPUT    Path to save isolates
+        -h, --help            show this help message and exit
+        -a PATH               Format: [PATH] to file containing list of ACCESSION
+                                IDs, 1 per line Name of the file is used to identify
+                                the isolates downloaded.
+        -m METADATA           JSON file with seed attributes and mandatory fields
+        -p, --preserve        preserve any existing SRA and fastq files
+        --all_runs_as_samples
+                                Treat all runs associated to a sample as separate
+                                samples. Default is to combine them into one run.
+        -n NODES, --nodes NODES
+                                Number of parallel batch jobs requested [default: 1]
+        -out OUTPUT           Path to save isolates
     ```
 
 Each of this programs will store each sequence inside a folder along with a metadata file.

@@ -7,10 +7,9 @@
     puts up a scaffold for your new Python project. Learn more under:
     http://pyscaffold.readthedocs.org/
 """
-
 import sys
+import os
 from setuptools import setup
-
 
 def setup_package():
     needs_sphinx = {'build_sphinx', 'upload_docs'}.intersection(sys.argv)
@@ -19,5 +18,13 @@ def setup_package():
           tests_require=['pytest_cov', 'pytest'],
           use_pyscaffold=True)
 
+def install_shell_scripts():
+    repo_dir = os.path.dirname(os.path.realpath(__file__))
+    src, dst = repo_dir +"/update", repo_dir +"/env/bin/update"
+    os.chmod(src, 484) #0744
+    if not os.path.exists(dst):
+        os.symlink(src, dst)
+
 if __name__ == "__main__":
     setup_package()
+    install_shell_scripts()
