@@ -20,7 +20,6 @@ import sys
 import re
 import json
 import argparse
-import logging
 import urllib
 import pandas as pd
 from StringIO import StringIO
@@ -28,10 +27,10 @@ from path import Path
 from pprint import pprint as pp
 from shutil import rmtree, move
 from tempfile import mkdtemp
-
 from subprocess import call
 from progressbar import Bar, Percentage, ProgressBar, ETA
 
+from log import _logger
 from isolates.metadata import ExtractExperimentMetadata, ExtractExperimentIDs
 from isolates.sequence import Sequence
 from isolates import __version__
@@ -40,13 +39,6 @@ __author__ = "Jose Luis Bellod Cisneros"
 __coauthor__ = "Martin C F Thomsen"
 __copyright__ = "Jose Luis Bellod Cisneros"
 __license__ = "none"
-
-logging.basicConfig(
-    level=logging.INFO,
-    stream=sys.stdout,
-    format='%(levelname)s:%(message)s'
-)
-_logger = logging.getLogger(__name__)
 
 # CLASSES
 class TemporaryDirectory(object):
@@ -401,7 +393,6 @@ def download_accession_list():
         print('Usage: -a PATH -o ORGANISM -out PATH [-m JSON]')
 
 def download_bioproject():
-    # logging.basicConfig(level=logging.INFO, stream=sys.stdout)
     args = parse_args_bioproject(sys.argv[1:])
     if args.b is not None:
         _logger.info('Good!')

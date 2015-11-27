@@ -8,20 +8,10 @@ from source import ontology, platforms, location_hash
 import re
 import urllib
 import copy
-import logging
-import sys
 from path import Path
 from subprocess import call, PIPE
 
-logging.basicConfig(
-    level=logging.INFO,
-    stream=sys.stdout,
-    format='%(levelname)s:%(message)s',
-    filename='sequence.log',
-    filemode='w'
-)
-_logger = logging.getLogger(__name__)
-
+from log import _logger
 
 class Sequence(object):
 
