@@ -336,7 +336,7 @@ def ProcessExperimentCombined(experiment_id, json, batch_dir, sample_dir_id, pre
             if not preserve or len(sfiles) == 0:
                 sfiles = []
                 for runid in m.runIDs:
-                    sf = DownloadRunFiles(runid, tmpdir, _logger)
+                    sf = DownloadRunFiles(runid, tmpdir)
                     if sf is not None:
                         sfiles.append(sf)
                     else:
