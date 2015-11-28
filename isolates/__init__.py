@@ -1,4 +1,10 @@
 import pkg_resources
+import socket
+import urllib
+from email.mime.text import MIMEText
+from subprocess import Popen, PIPE
+from shutil import rmtree
+from tempfile import mkdtemp
 
 # GENERAL MODULE CLASSES
 class TemporaryDirectory(object):

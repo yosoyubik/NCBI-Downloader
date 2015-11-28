@@ -17,17 +17,9 @@ from __future__ import division, print_function, absolute_import
 
 import os
 import sys
-import re
 import json
 import argparse
-import urllib
-import pandas as pd
-from StringIO import StringIO
-from path import Path
-from pprint import pprint as pp
-from shutil import rmtree, move
-from tempfile import mkdtemp
-from subprocess import call
+from shutil import move
 from progressbar import Bar, Percentage, ProgressBar, ETA
 
 from isolates import __version__, TemporaryDirectory

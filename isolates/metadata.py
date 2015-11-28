@@ -4,16 +4,9 @@
 
 '''
 import re
-import urllib
-import copy
-import sys
 import json
-import io
 import geocoder
-import socket
 from datetime import datetime
-from email.mime.text import MIMEText
-from subprocess import Popen, PIPE
 
 from isolates import mail, openurl, ceil
 from isolates.log import _logger
