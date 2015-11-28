@@ -34,7 +34,7 @@ acctypes = flipdict({ # flipdict reverses the dictionary!
 
 # Read Ontology DB from file to dict
 ontology = []
-try: ontology_fp = '/'.join(os.path.abspath(__file__).split('/')[:-2])+'/etc/source_ontology.csv'
+try: ontology_fp = os.path.dirname(os.path.abspath(__file__))+'/etc/source_ontology.csv'
 except: print "Could not set Ontology path!"
 else:
     if os.path.exists(ontology_fp):
@@ -53,3 +53,5 @@ else:
                 if not tmp[0] in ontology[-1]:
                     ontology[-1][tmp[0]] = tmp[1:]
                 else: print "Ontology doublicate found! Please fix (%s)"%tmp[0]
+    else:
+        print "Ontology file could not be found: %s"%ontology_fp
