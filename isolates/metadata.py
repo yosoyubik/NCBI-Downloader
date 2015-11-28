@@ -4,77 +4,15 @@
 
 '''
 import re
-import urllib
-import copy
-import sys
 import json
-import io
 import geocoder
 from datetime import datetime
-from source import ontology, platforms, location_hash
-from template import metadata as metadata_template, default as default_metadata
-import socket
-from email.mime.text import MIMEText
-from subprocess import Popen, PIPE
 
+from isolates import mail, openurl, ceil
 from isolates.log import _logger
-
-class openurl(object):
-    ''' urllib library wrapper, to make it easier to use.
-    >>> import urllib
-    >>> with openurl('http://www.ncbi.nlm.nih.gov/sra/?term=ERX006651&format=text') as u:
-    ...   for l in u:
-    ...      print l.strip()
-    '''
-    def __init__(self, url):
-        self.url = url
-    def __enter__(self):
-        self.u = urllib.urlopen(self.url)
-        return self.u 
-    def __exit__(self, type=None, value=None, traceback=None):
-        self.u.close()
-        self.u = None
-    def __iter__(self):
-        yield self.readline()
-    def read(self):
-        return self.u.read()
-    def readline(self):
-        return self.u.readline()
-    def readlines(self):
-        return self.u.readlines()
-
-class mail_obj():
-   '''
-   >>> mail = mail_obj(['to_me@domain.com'], 'from_me@domain.com')
-   >>> mail.send('Hello my subject!','Hello my body!')
-   '''
-   def __init__(self, recepients, sender, reply):
-      self.to = recepients
-      self.fr = sender
-      self.rt = reply
-   def send(self, subject, message):
-      '''  '''
-      msg = MIMEText(message)
-      msg["To"] = ', '.join(self.to) if isinstance(self.to, list) else self.to
-      msg["From"] = self.fr
-      msg["Reply-To"] = self.rt
-      msg["Subject"] = subject
-      p = Popen(["sendmail -r %s %s"%(self.fr, ' '.join(self.to))],
-                shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE)
-      out, err = p.communicate(msg.as_string())
-      p.wait()
-
-# Setup Mail Wrapper
-if 'cbs.dtu.dk' in socket.getfqdn():
-    mail = mail_obj(['mcft@cbs.dtu.dk'],
-                    'mail-deamon@computerome.dtu.dk',
-                    'cgehelp@cbs.dtu.dk')
-elif 'computerome' in socket.getfqdn():
-    mail = mail_obj(['mcft@cbs.dtu.dk'],
-                    'mail-deamon@cbs.dtu.dk',
-                    'cgehelp@cbs.dtu.dk')
-else:
-    mail = None
+from isolates.source import acctypes, ontology, platforms, location_hash
+from isolates.template import (metadata as metadata_template,
+                               default as default_metadata)
 
 class metadata_obj(object):
     ''' This class describes metadata associated with a sample '''
@@ -187,7 +125,7 @@ class metadata_obj(object):
                     )
                     if self['collection_date'] == '':
                         _logger.warning(
-                            'Date Empty: %s',
+                            'Date Empty: %s, %s',
                             val, query
                         )
                 elif att in ['collected_by', 'collected by']:
@@ -401,7 +339,7 @@ def ExtractExperimentMetadata(accession, json=None):
     m = metadata_obj(accession, json)
     return m
 
-def ExtractExperimentIDs(sample_accession):
+def ExtractExperimentIDs_acc(sample_accession):
     ''' Extract experiments which have runs associated
     >>> ExtractExperimentIDs('ERS397989')
     ['ERX385098']
@@ -441,4 +379,40 @@ def ExtractExperimentIDs(sample_accession):
                         else:
                             if runs > 0:
                                 experiments.append(x)
+    return experiments
+
+def ExtractExperimentIDs_tax(taxid):
+    ''' Extract experiments which have runs associated from taxid
+    >>> ExtractExperimentIDs_tax('211968')
+    ['SRX1308653', 'SRX1308716', 'SRX1308789', 'SRX1308879', 'SRX337751']
+    '''
+    ena_url = ('http://www.ebi.ac.uk/ena/data/warehouse/search?'
+               'query="tax_tree(%s)"&'
+               'result=read_experiment')%(taxid)
+    countquery = '&resultcount'
+    display = '&display=report&fields=experiment_accession'
+    # Find number of entries for the provided taxid 
+    count = 0
+    with openurl(ena_url+countquery) as u:
+        for l in u:
+            l = l.strip()
+            if ':' in l:
+                tmp = l.split(':')
+                if tmp[0] == 'Number of results':
+                    count = int(tmp[1].replace(',',''))
+    # Extract experiment IDs
+    experiments = []
+    if count > 0:
+        length = 100000
+        pages = ceil(count/float(length))
+        for p in xrange(pages):
+            page_offset = '&offset=%s&length=%s'%(p*length+1, length)
+            with openurl(ena_url+display+page_offset) as u:
+                header = u.readline()
+                for l in u:
+                    l = l.strip()
+                    if l[:3] in acctypes and acctypes[l[:3]] == 'experiment':
+                        experiments.append(l)
+                    else:
+                        print("Unknown Experiment ID: %s (taxid=%s)"%(l,taxid))
     return experiments
