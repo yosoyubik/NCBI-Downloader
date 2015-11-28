@@ -5,15 +5,9 @@ import sys, os, argparse
 from subprocess import Popen, PIPE
 from pipes import quote
 
-import isolates
-import isolates.download_accession_list
-import isolates.metadata
-
-__version__ = isolates.__version__
-acctypes = isolates.download_accession_list.acctypes
-ceil = isolates.metadata.ceil
-ExtractExperimentIDs_acc = isolates.metadata.ExtractExperimentIDs_acc
-ExtractExperimentIDs_tax = isolates.metadata.ExtractExperimentIDs_tax
+from isolates import __version__, ceil
+from source import acctypes
+from isolates.metadata import ExtractExperimentIDs_acc, ExtractExperimentIDs_tax
 
 def parse_args(args):
     """

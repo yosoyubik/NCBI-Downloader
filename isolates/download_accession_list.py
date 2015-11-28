@@ -30,97 +30,16 @@ from tempfile import mkdtemp
 from subprocess import call
 from progressbar import Bar, Percentage, ProgressBar, ETA
 
-import isolates
-import isolates.log
-import isolates.metadata 
-import isolates.sequence 
-
-__version__ = isolates.__version__
-_logger = isolates.log._logger
-ExtractExperimentMetadata = isolates.metadata.ExtractExperimentMetadata
-ExtractExperimentIDs_acc = isolates.metadata.ExtractExperimentIDs_acc
-Sequence = isolates.sequence.Sequence
+from isolates import __version__, TemporaryDirectory
+from isolates.log import _logger
+from isolates.metadata import (ExtractExperimentMetadata,
+                               ExtractExperimentIDs_acc)
+from isolates.sequence import Sequence
 
 __author__ = "Jose Luis Bellod Cisneros"
 __coauthor__ = "Martin C F Thomsen"
 __copyright__ = "Jose Luis Bellod Cisneros"
 __license__ = "none"
-
-# CLASSES
-class TemporaryDirectory(object):
-   """Create and return a temporary directory.  This has the same
-   behavior as mkdtemp but can be used as a context manager.  For
-   example:
-   
-   >>> import os
-   >>> tmpfile = 'file.ext'
-   >>> with TemporaryDirectory() as tmpdir:
-   ...    print "Was tmpdir created? %s"%os.path.exists(tmpdir)
-   ...    os.chdir(tmpdir)
-   ...    with open(tmpfile, 'w') as f:
-   ...       f.write('Hello World!')
-   ...    print "Was tmpfile created? %s"%os.path.exists(tmpfile)
-   Was tmpdir created? True
-   Was tmpfile created? True
-   >>> print "Does tmpfile still exist? %s"%os.path.exists(tmpfile)
-   Does tmpfile still exist? False
-   >>> print "Does tmpdir still exist? %s"%os.path.exists(tmpdir)
-   Does tmpdir still exist? False
-   
-   Upon exiting the context, the directory and everything contained
-   in it are removed.
-   This method is not implemented in python-2.7!
-   """
-   def __init__(self, suffix="", prefix="tmp", dir=None):
-      self.name = None
-      self.name = mkdtemp(suffix, prefix, dir)
-   def __enter__(self):
-      return self.name
-   def cleanup(self, _warn=False):
-      if self.name:
-         try: rmtree(self.name)
-         except: print('Could not remove %s'%self.name)
-         else: self.name = None
-   def __exit__(self, exc, value, tb):
-       self.cleanup()
-
-def flipdict(d):
-    ''' switch keys and values, so that all values are keys in a new dict '''
-    return dict(zip(*list(reversed(zip(*[(k, v) for k in d for v in d[k]])))))
-
-def parse_args_bioproject(args):
-    """
-    Parse command line parameters
-
-    :param args: command line parameters as list of strings
-    :return: command line parameters as :obj:`argparse.Namespace`
-    """
-    parser = argparse.ArgumentParser(
-        description="Download script of isolates from" +
-                    "ENA taxonomy or Accession list")
-    parser.add_argument(
-        '-v',
-        '--version',
-        action='version',
-        version='isolates {ver}'.format(ver=__version__))
-    parser.add_argument(
-        '-b',
-        nargs=3,
-        metavar=('BIOPROJECTID', 'ORGANISM', 'PATH'),
-        help='Format: [BIOPROJECTID] [ORGANISM] [PATH]\n' +
-             '[BIOPROJECTID] if unknown insert a unique ID\n' +
-             '[PATH] to file containing list of ACCESSION IDs, 1 per line\n' +
-             'Name of the file is used to identify the isolates downloaded.'
-    )
-    parser.add_argument(
-        '-out',
-        nargs=1,
-        metavar=('OUTPUT'),
-        required=True,
-        help='Path to save isolates'
-    )
-    return parser.parse_args(args)
-
 
 def parse_args_accessions(args):
     """
@@ -396,20 +315,6 @@ def download_accession_list():
         download_fastq_from_list(args.a[0], args.out[0], default, args.preserve, args.all_runs_as_samples)
     else:
         print('Usage: -a PATH -o ORGANISM -out PATH [-m JSON]')
-
-def download_bioproject():
-    args = parse_args_bioproject(sys.argv[1:])
-    if args.b is not None:
-        download_fastq_from_bioproject()
-    else:
-        _logger.error('Usage: [-b BIOPROJECTID ORGANISM PATH]')
-
-acctypes = flipdict({ # flipdict reverses the dictionary!
-    'study':        ['PRJ', 'SRP', 'ERP', 'DRP'],
-    'sample':       ['SAM', 'SRS', 'ERS', 'DRS'],
-    'experiment':   ['SRX', 'ERX', 'DRX'],
-    'run':          ['SRR', 'ERR', 'DRR']
-})
 
 if __name__ == "__main__":
     download_accession_list()

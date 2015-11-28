@@ -15,77 +15,11 @@ from datetime import datetime
 from email.mime.text import MIMEText
 from subprocess import Popen, PIPE
 
-import isolates.log 
-import isolates.download_accession_list
-import isolates.source 
-import isolates.template 
-
-_logger = isolates.log._logger
-acctypes = isolates.download_accession_list.acctypes
-ontology = isolates.source.ontology
-platforms = isolates.source.platforms
-location_hash = isolates.source.location_hash
-metadata_template = isolates.template.metadata
-default_metadata = isolates.template.default
-
-ceil = lambda a: int(a) + (a%1>0)
-
-class openurl(object):
-    ''' urllib library wrapper, to make it easier to use.
-    >>> import urllib
-    >>> with openurl('http://www.ncbi.nlm.nih.gov/sra/?term=ERX006651&format=text') as u:
-    ...   for l in u:
-    ...      print l.strip()
-    '''
-    def __init__(self, url):
-        self.url = url
-    def __enter__(self):
-        self.u = urllib.urlopen(self.url)
-        return self.u 
-    def __exit__(self, type=None, value=None, traceback=None):
-        self.u.close()
-        self.u = None
-    def __iter__(self):
-        yield self.readline()
-    def read(self):
-        return self.u.read()
-    def readline(self):
-        return self.u.readline()
-    def readlines(self):
-        return self.u.readlines()
-
-class mail_obj():
-   '''
-   >>> mail = mail_obj(['to_me@domain.com'], 'from_me@domain.com')
-   >>> mail.send('Hello my subject!','Hello my body!')
-   '''
-   def __init__(self, recepients, sender, reply):
-      self.to = recepients
-      self.fr = sender
-      self.rt = reply
-   def send(self, subject, message):
-      '''  '''
-      msg = MIMEText(message)
-      msg["To"] = ', '.join(self.to) if isinstance(self.to, list) else self.to
-      msg["From"] = self.fr
-      msg["Reply-To"] = self.rt
-      msg["Subject"] = subject
-      p = Popen(["sendmail -r %s %s"%(self.fr, ' '.join(self.to))],
-                shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE)
-      out, err = p.communicate(msg.as_string())
-      p.wait()
-
-# Setup Mail Wrapper
-if 'cbs.dtu.dk' in socket.getfqdn():
-    mail = mail_obj(['mcft@cbs.dtu.dk'],
-                    'mail-deamon@computerome.dtu.dk',
-                    'cgehelp@cbs.dtu.dk')
-elif 'computerome' in socket.getfqdn():
-    mail = mail_obj(['mcft@cbs.dtu.dk'],
-                    'mail-deamon@cbs.dtu.dk',
-                    'cgehelp@cbs.dtu.dk')
-else:
-    mail = None
+from isolates import mail, openurl, ceil
+from isolates.log import _logger
+from isolates.source import acctypes, ontology, platforms, location_hash
+from isolates.template import (metadata as metadata_template,
+                               default as default_metadata)
 
 class metadata_obj(object):
     ''' This class describes metadata associated with a sample '''
