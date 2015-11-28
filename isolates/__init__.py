@@ -95,8 +95,8 @@ class mail_obj():
         msg["From"] = self.fr
         msg["Reply-To"] = self.rt
         msg["Subject"] = subject
-        print("sendmail -r %s %s"%(self.fr, ' '.join(self.to)))
-        print(msg.as_string())
+        return "%s\n%s"%("sendmail -r %s %s"%(self.fr, ' '.join(self.to)),
+                         msg.as_string())
 
 # GENERAL MODULE FUNCTIONS
 def flipdict(d):
@@ -116,11 +116,12 @@ except:
     __version__ = 'unknown'
 
 # Setup Mail Wrapper
-if 'cbs.dtu.dk' in socket.getfqdn():
+fqdn = socket.getfqdn()
+if 'cbs.dtu.dk' in fqdn:
     mail = mail_obj(['mcft@cbs.dtu.dk'],
                     'mail-deamon@cbs.dtu.dk',
                     'cgehelp@cbs.dtu.dk')
-elif 'computerome' in socket.getfqdn():
+elif any([x in fqdn for x in ['computerome', 'risoe']]):
     mail = mail_obj(['mcft@cbs.dtu.dk'],
                     'mail-deamon@computerome.dtu.dk',
                     'cgehelp@cbs.dtu.dk')
