@@ -27,7 +27,7 @@ from isolates.log import _logger
 from isolates.metadata import (ExtractExperimentMetadata,
                                ExtractExperimentIDs_acc)
 from isolates.sequence import Sequence
-from source import acctypes
+from isolates.source import acctypes
 
 __author__ = "Jose Luis Bellod Cisneros"
 __coauthor__ = "Martin C F Thomsen"
