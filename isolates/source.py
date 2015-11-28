@@ -1,4 +1,7 @@
 import os
+
+from isolates import flipdict
+
 # List of known platforms
 platforms = {
     'illumina': 'Illumina',
@@ -21,6 +24,13 @@ location_hash = {
                 'zip_code': '', 'longitude': -120.5380993,
                 'latitude': 44.1419049, 'location_note': 'USA:OR'}
 }
+
+acctypes = flipdict({ # flipdict reverses the dictionary!
+    'study':        ['PRJ', 'SRP', 'ERP', 'DRP'],
+    'sample':       ['SAM', 'SRS', 'ERS', 'DRS'],
+    'experiment':   ['SRX', 'ERX', 'DRX'],
+    'run':          ['SRR', 'ERR', 'DRR']
+})
 
 # Read Ontology DB from file to dict
 ontology = []

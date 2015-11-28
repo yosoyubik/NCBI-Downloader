@@ -17,105 +17,22 @@ from __future__ import division, print_function, absolute_import
 
 import os
 import sys
-import re
 import json
 import argparse
-import urllib
-import pandas as pd
-from StringIO import StringIO
-from path import Path
-from pprint import pprint as pp
-from shutil import rmtree, move
-from tempfile import mkdtemp
-from subprocess import call
+from shutil import move
 from progressbar import Bar, Percentage, ProgressBar, ETA
 
+from isolates import __version__, TemporaryDirectory
 from isolates.log import _logger
-from isolates.metadata import ExtractExperimentMetadata, ExtractExperimentIDs
+from isolates.metadata import (ExtractExperimentMetadata,
+                               ExtractExperimentIDs_acc)
 from isolates.sequence import Sequence
-from isolates import __version__
+from isolates.source import acctypes
 
 __author__ = "Jose Luis Bellod Cisneros"
 __coauthor__ = "Martin C F Thomsen"
 __copyright__ = "Jose Luis Bellod Cisneros"
 __license__ = "none"
-
-# CLASSES
-class TemporaryDirectory(object):
-   """Create and return a temporary directory.  This has the same
-   behavior as mkdtemp but can be used as a context manager.  For
-   example:
-   
-   >>> import os
-   >>> tmpfile = 'file.ext'
-   >>> with TemporaryDirectory() as tmpdir:
-   ...    print "Was tmpdir created? %s"%os.path.exists(tmpdir)
-   ...    os.chdir(tmpdir)
-   ...    with open(tmpfile, 'w') as f:
-   ...       f.write('Hello World!')
-   ...    print "Was tmpfile created? %s"%os.path.exists(tmpfile)
-   Was tmpdir created? True
-   Was tmpfile created? True
-   >>> print "Does tmpfile still exist? %s"%os.path.exists(tmpfile)
-   Does tmpfile still exist? False
-   >>> print "Does tmpdir still exist? %s"%os.path.exists(tmpdir)
-   Does tmpdir still exist? False
-   
-   Upon exiting the context, the directory and everything contained
-   in it are removed.
-   This method is not implemented in python-2.7!
-   """
-   def __init__(self, suffix="", prefix="tmp", dir=None):
-      self.name = None
-      self.name = mkdtemp(suffix, prefix, dir)
-   def __enter__(self):
-      return self.name
-   def cleanup(self, _warn=False):
-      if self.name:
-         try: rmtree(self.name)
-         except: print('Could not remove %s'%self.name)
-         else: self.name = None
-   def __exit__(self, exc, value, tb):
-       self.cleanup()
-
-def flipdict(d):
-    ''' switch keys and values, so that all values are keys in a new dict '''
-    return dict(zip(*list(reversed(zip(*[(k, v) for k in d for v in d[k]])))))
-
-def parse_args_bioproject(args):
-    """
-    Parse command line parameters
-
-    :param args: command line parameters as list of strings
-    :return: command line parameters as :obj:`argparse.Namespace`
-    """
-    parser = argparse.ArgumentParser(
-        description="Download script of isolates from" +
-                    "ENA taxonomy or Accession list")
-    parser.add_argument(
-        '-v',
-        '--version',
-        action='version',
-        version='isolates {ver}'.format(ver=__version__))
-
-    parser.add_argument(
-        '-b',
-        nargs=3,
-        metavar=('BIOPROJECTID', 'ORGANISM', 'PATH'),
-        help='Format: [BIOPROJECTID] [ORGANISM] [PATH]\n' +
-             '[BIOPROJECTID] if unknown insert a unique ID\n' +
-             '[PATH] to file containing list of ACCESSION IDs, 1 per line\n' +
-             'Name of the file is used to identify the isolates downloaded.'
-    )
-    parser.add_argument(
-        '-out',
-        nargs=1,
-        metavar=('OUTPUT'),
-        required=True,
-        help='Path to save isolates'
-    )
-    return parser.parse_args(args)
-
 
 def parse_args_accessions(args):
     """
@@ -188,7 +105,7 @@ def DownloadRunFiles(runid, tmpdir):
 def CreateSampleDir(sfiles, m, sample_dir, preserve=False):
     sample_dir = str(sample_dir)
     if len(sfiles) == 0:
-        _logger.error("Error: No files were found! (%s)"%sample_dir)
+        _logger.error("Error: No files were found! (%s)", sample_dir)
         return False
     if not os.path.exists(sample_dir):
         _logger.info("Create sample dir: %s", sample_dir)
@@ -251,12 +168,12 @@ def download_fastq_from_list(accession_list, output, json, preserve=False, all_r
             if accession[:3] in acctypes:
                 accession_type = acctypes[accession[:3]]
             else:
-                _logger.error("unknown accession type for '%s'!"%accession)
+                _logger.error("unknown accession type for '%s'!", accession)
                 failed_accession.append(accession)
                 continue
             _logger.info("Acc Found: %s (%s)", accession, accession_type)
             if accession_type in ['study', 'sample']:
-                for experiment_id in ExtractExperimentIDs(accession):
+                for experiment_id in ExtractExperimentIDs_acc(accession):
                     sample_dir_id = ProcessExperiment(
                         experiment_id, json, batch_dir,sample_dir_id, preserve,
                         failed_accession, all_runs_as_samples)
@@ -277,7 +194,7 @@ def download_fastq_from_list(accession_list, output, json, preserve=False, all_r
             _logger.info("All accessions downloaded succesfully!")
 
 def ProcessExperiment(experiment_id, json, batch_dir, sample_dir_id, preserve, failed_accession, all_runs_as_samples):
-    _logger.info("Processing %s..."%experiment_id)
+    _logger.info("Processing %s...", experiment_id)
     if all_runs_as_samples:
         sample_dir_id = ProcessExperimentSeparate(
             experiment_id, json, batch_dir, sample_dir_id,
@@ -294,7 +211,7 @@ def ProcessExperimentSeparate(experiment_id, json, batch_dir, sample_dir_id, pre
         # Check if a run ID was submitted, and if so only process that
         if experiment_id in m.runIDs: m.runIDs = [experiment_id]
         # Process the runIDs as samples
-        _logger.info("Found Following Runs: %s"%', '.join(m.runIDs))
+        _logger.info("Found Following Runs: %s", ', '.join(m.runIDs))
         for runid in m.runIDs:
             with TemporaryDirectory() as tmpdir:
                 os.chdir(batch_dir)
@@ -312,10 +229,10 @@ def ProcessExperimentSeparate(experiment_id, json, batch_dir, sample_dir_id, pre
                     else:
                         failed_accession.append(runid)
                 else:
-                    _logger.error("Files could not be retrieved! (%s)"%runid)
+                    _logger.error("Files could not be retrieved! (%s)", runid)
                     failed_accession.append(runid)
     else:
-        _logger.error("Metadata Invalid! (%s)"%experiment_id)
+        _logger.error("Metadata Invalid! (%s)", experiment_id)
         failed_accession.append(experiment_id)
     return sample_dir_id
 
@@ -325,7 +242,7 @@ def ProcessExperimentCombined(experiment_id, json, batch_dir, sample_dir_id, pre
         # Check if a run ID was submitted, and if so only process that
         if experiment_id in m.runIDs: m.runIDs = [experiment_id]
         # Process the runs as one sample
-        _logger.info("Found Following Runs: %s"%', '.join(m.runIDs))
+        _logger.info("Found Following Runs: %s", ', '.join(m.runIDs))
         with TemporaryDirectory() as tmpdir:
             os.chdir(batch_dir)
             sample_dir = "%s/%s/"%(batch_dir, sample_dir_id)
@@ -339,8 +256,10 @@ def ProcessExperimentCombined(experiment_id, json, batch_dir, sample_dir_id, pre
                     if sf is not None:
                         sfiles.append(sf)
                     else:
-                        _logger.error("Run files could not be retrieved! (%s)"%runid)
-                _logger.info("Found Following files sets:\n%s\n"%'\n'.join([', '.join(sf) for sf in sfiles]))
+                        _logger.error("Run files could not be retrieved! (%s)",
+                                      runid)
+                _logger.info("Found Following files sets:\n%s\n",
+                             '\n'.join([', '.join(sf) for sf in sfiles]))
                 # Combine sfiles into one entry
                 if len(sfiles) > 1:
                     for file_no, file_set in enumerate(zip(*sfiles)):
@@ -356,12 +275,14 @@ def ProcessExperimentCombined(experiment_id, json, batch_dir, sample_dir_id, pre
                         if os.path.exists(new_file):
                             csfiles.append(new_file)
                         else:
-                            _logger.error("Combined file creation failed! (%s: %s)"%(experiment_id, file_no))
+                            _logger.error("Combined file creation failed! (%s: %s)",
+                                          experiment_id, file_no)
                             break
                 elif isinstance(sfiles[0], list):
                     csfiles = sfiles[0]
                 if csfiles == []:
-                    _logger.error("Files could not be combined! (%s)"%experiment_id)
+                    _logger.error("Files could not be combined! (%s)",
+                                  experiment_id)
                     failed_accession.append(experiment_id)
             if csfiles != []:
                 success = CreateSampleDir(csfiles, m, sample_dir, preserve)
@@ -370,10 +291,11 @@ def ProcessExperimentCombined(experiment_id, json, batch_dir, sample_dir_id, pre
                 else:
                     failed_accession.append(experiment_id)
             else:
-                _logger.error("Files could not be retrieved! (%s)"%experiment_id)
+                _logger.error("Files could not be retrieved! (%s)",
+                              experiment_id)
                 failed_accession.append(experiment_id)
     else:
-        _logger.error("Metadata Invalid! (%s)"%experiment_id)
+        _logger.error("Metadata Invalid! (%s)", experiment_id)
         failed_accession.append(experiment_id)
     return sample_dir_id
 
@@ -391,20 +313,6 @@ def download_accession_list():
         download_fastq_from_list(args.a[0], args.out[0], default, args.preserve, args.all_runs_as_samples)
     else:
         print('Usage: -a PATH -o ORGANISM -out PATH [-m JSON]')
-
-def download_bioproject():
-    args = parse_args_bioproject(sys.argv[1:])
-    if args.b is not None:
-        download_fastq_from_bioproject()
-    else:
-        _logger.error('Usage: [-b BIOPROJECTID ORGANISM PATH]')
-
-acctypes = flipdict({ # flipdict reverses the dictionary!
-    'study':        ['PRJ', 'SRP', 'ERP', 'DRP'],
-    'sample':       ['SAM', 'SRS', 'ERS', 'DRS'],
-    'experiment':   ['SRX', 'ERX', 'DRX'],
-    'run':          ['SRR', 'ERR', 'DRR']
-})
 
 if __name__ == "__main__":
     download_accession_list()
