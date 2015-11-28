@@ -113,6 +113,9 @@ class metadata_obj(object):
                         )
                         # Notify Curators By Email
                         if mail is not None:
+                            _logger.debug(mail.test('New isolation source...',
+                                            'Source not identified: %s, %s'%(
+                                            val, query)))
                             mail.send('New isolation source...',
                                       'Source not identified: %s, %s'%(
                                           val, query))

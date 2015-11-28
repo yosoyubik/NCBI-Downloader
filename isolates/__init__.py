@@ -95,8 +95,8 @@ class mail_obj():
         msg["From"] = self.fr
         msg["Reply-To"] = self.rt
         msg["Subject"] = subject
-        print("sendmail -r %s %s"%(self.fr, ' '.join(self.to)))
-        print(msg.as_string())
+        return "%s\n%s"%("sendmail -r %s %s"%(self.fr, ' '.join(self.to)),
+                         msg.as_string())
 
 # GENERAL MODULE FUNCTIONS
 def flipdict(d):
