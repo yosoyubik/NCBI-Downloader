@@ -10,38 +10,34 @@ from source import acctypes
 from isolates.metadata import ExtractExperimentIDs_acc, ExtractExperimentIDs_tax
 
 def parse_args(args):
-    """
-    Parse command line parameters
-
-    :param args: command line parameters as list of strings
-    :return: command line parameters as :obj:`argparse.Namespace`
-    """
+    ''' Parse command line parameters '''
     parser = argparse.ArgumentParser(
-        description="Download script of isolates from" +
-                    "ENA taxonomy or Accession list")
+        description=('Download samples from NCBI through either a taxonomy or '
+                     'accession ID input'))
     parser.add_argument(
         '-v',
         '--version',
         action='version',
-        version='isolates {ver}'.format(ver=__version__))
+        version='NCBI Downloader {ver}'.format(ver=__version__))
     parser.add_argument(
         '-a',
-        metavar=('PATH'),
-        help='Format: [PATH]\n' +
-             'to file containing list of ACCESSION IDs, 1 per line\n' +
-             'Name of the file is used to identify the isolates downloaded.'
+        metavar=('ACCESSION'),
+        help=('Input should be a path to file containing accession IDs or a '
+              'comma-separated string of accession IDs.\n'
+              'The file may only contain one accession ID per line.\n')
     )
     parser.add_argument(
         '-t',
-        nargs=1,
         metavar=('TAXID'),
-        help='Tax ID from ENA data archive'
+        help=('Input should be a path to file containing taxonomy IDs or a '
+              'comma-separated string of taxonomy IDs.\n'
+              'The file may only contain one taxonomy ID per line.\n')
     )
     parser.add_argument(
         '-m',
-        metavar=('PATH'),
         default=None,
-        help='JSON file with seed attributes and mandatory fields\n'
+        help=('JSON file with seed attributes (default fields and values) and '
+              'mandatory fields.\n')
     )
     parser.add_argument(
         '-p',
@@ -49,7 +45,7 @@ def parse_args(args):
         action="store_true",
         dest="preserve",
         default=False,
-        help='preserve any existing SRA and fastq files\n'
+        help='Preserve any existing fastq files.\n'
     )
     parser.add_argument(
         '--all_runs_as_samples',
@@ -64,20 +60,20 @@ def parse_args(args):
         '--nodes',
         dest="nodes",
         default=1,
-        help=('Number of parallel batch jobs requested [default: 1]\n')
+        help='Number of parallel batch jobs requested [default: 1]\n'
     )
     parser.add_argument(
         '-out',
         metavar=('OUTPUT'),
         required=True,
-        help='Path to save isolates'
+        help='output directory name.'
     )
     return parser.parse_args(args)
 
 def SetupParallelDownload(accession_list):
-    """ Expand list of accession IDs to experiment or lower, and devide into
+    ''' Expand list of accession IDs to experiment or lower, and devide into
     parallel batch jobs
-    """
+    '''
     experiments = []
     failed_accession = []
     with open(accession_list, 'r') as f:
