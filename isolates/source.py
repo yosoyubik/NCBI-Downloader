@@ -53,3 +53,5 @@ else:
                 if not tmp[0] in ontology[-1]:
                     ontology[-1][tmp[0]] = tmp[1:]
                 else: print "Ontology doublicate found! Please fix (%s)"%tmp[0]
+    else:
+        print "Ontology file could not be found: %s"%ontology_fp
