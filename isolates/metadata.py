@@ -125,7 +125,7 @@ class metadata_obj(object):
                     )
                     if self['collection_date'] == '':
                         _logger.warning(
-                            'Date Empty: %s',
+                            'Date Empty: %s, %s',
                             val, query
                         )
                 elif att in ['collected_by', 'collected by']:

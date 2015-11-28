@@ -105,7 +105,7 @@ def DownloadRunFiles(runid, tmpdir):
 def CreateSampleDir(sfiles, m, sample_dir, preserve=False):
     sample_dir = str(sample_dir)
     if len(sfiles) == 0:
-        _logger.error("Error: No files were found! (%s)"%sample_dir)
+        _logger.error("Error: No files were found! (%s)", sample_dir)
         return False
     if not os.path.exists(sample_dir):
         _logger.info("Create sample dir: %s", sample_dir)
@@ -168,7 +168,7 @@ def download_fastq_from_list(accession_list, output, json, preserve=False, all_r
             if accession[:3] in acctypes:
                 accession_type = acctypes[accession[:3]]
             else:
-                _logger.error("unknown accession type for '%s'!"%accession)
+                _logger.error("unknown accession type for '%s'!", accession)
                 failed_accession.append(accession)
                 continue
             _logger.info("Acc Found: %s (%s)", accession, accession_type)
@@ -194,7 +194,7 @@ def download_fastq_from_list(accession_list, output, json, preserve=False, all_r
             _logger.info("All accessions downloaded succesfully!")
 
 def ProcessExperiment(experiment_id, json, batch_dir, sample_dir_id, preserve, failed_accession, all_runs_as_samples):
-    _logger.info("Processing %s..."%experiment_id)
+    _logger.info("Processing %s...", experiment_id)
     if all_runs_as_samples:
         sample_dir_id = ProcessExperimentSeparate(
             experiment_id, json, batch_dir, sample_dir_id,
@@ -211,7 +211,7 @@ def ProcessExperimentSeparate(experiment_id, json, batch_dir, sample_dir_id, pre
         # Check if a run ID was submitted, and if so only process that
         if experiment_id in m.runIDs: m.runIDs = [experiment_id]
         # Process the runIDs as samples
-        _logger.info("Found Following Runs: %s"%', '.join(m.runIDs))
+        _logger.info("Found Following Runs: %s", ', '.join(m.runIDs))
         for runid in m.runIDs:
             with TemporaryDirectory() as tmpdir:
                 os.chdir(batch_dir)
@@ -229,10 +229,10 @@ def ProcessExperimentSeparate(experiment_id, json, batch_dir, sample_dir_id, pre
                     else:
                         failed_accession.append(runid)
                 else:
-                    _logger.error("Files could not be retrieved! (%s)"%runid)
+                    _logger.error("Files could not be retrieved! (%s)", runid)
                     failed_accession.append(runid)
     else:
-        _logger.error("Metadata Invalid! (%s)"%experiment_id)
+        _logger.error("Metadata Invalid! (%s)", experiment_id)
         failed_accession.append(experiment_id)
     return sample_dir_id
 
@@ -242,7 +242,7 @@ def ProcessExperimentCombined(experiment_id, json, batch_dir, sample_dir_id, pre
         # Check if a run ID was submitted, and if so only process that
         if experiment_id in m.runIDs: m.runIDs = [experiment_id]
         # Process the runs as one sample
-        _logger.info("Found Following Runs: %s"%', '.join(m.runIDs))
+        _logger.info("Found Following Runs: %s", ', '.join(m.runIDs))
         with TemporaryDirectory() as tmpdir:
             os.chdir(batch_dir)
             sample_dir = "%s/%s/"%(batch_dir, sample_dir_id)
@@ -256,8 +256,10 @@ def ProcessExperimentCombined(experiment_id, json, batch_dir, sample_dir_id, pre
                     if sf is not None:
                         sfiles.append(sf)
                     else:
-                        _logger.error("Run files could not be retrieved! (%s)"%runid)
-                _logger.info("Found Following files sets:\n%s\n"%'\n'.join([', '.join(sf) for sf in sfiles]))
+                        _logger.error("Run files could not be retrieved! (%s)",
+                                      runid)
+                _logger.info("Found Following files sets:\n%s\n",
+                             '\n'.join([', '.join(sf) for sf in sfiles]))
                 # Combine sfiles into one entry
                 if len(sfiles) > 1:
                     for file_no, file_set in enumerate(zip(*sfiles)):
@@ -273,12 +275,14 @@ def ProcessExperimentCombined(experiment_id, json, batch_dir, sample_dir_id, pre
                         if os.path.exists(new_file):
                             csfiles.append(new_file)
                         else:
-                            _logger.error("Combined file creation failed! (%s: %s)"%(experiment_id, file_no))
+                            _logger.error("Combined file creation failed! (%s: %s)",
+                                          experiment_id, file_no)
                             break
                 elif isinstance(sfiles[0], list):
                     csfiles = sfiles[0]
                 if csfiles == []:
-                    _logger.error("Files could not be combined! (%s)"%experiment_id)
+                    _logger.error("Files could not be combined! (%s)",
+                                  experiment_id)
                     failed_accession.append(experiment_id)
             if csfiles != []:
                 success = CreateSampleDir(csfiles, m, sample_dir, preserve)
@@ -287,10 +291,11 @@ def ProcessExperimentCombined(experiment_id, json, batch_dir, sample_dir_id, pre
                 else:
                     failed_accession.append(experiment_id)
             else:
-                _logger.error("Files could not be retrieved! (%s)"%experiment_id)
+                _logger.error("Files could not be retrieved! (%s)",
+                              experiment_id)
                 failed_accession.append(experiment_id)
     else:
-        _logger.error("Metadata Invalid! (%s)"%experiment_id)
+        _logger.error("Metadata Invalid! (%s)", experiment_id)
         failed_accession.append(experiment_id)
     return sample_dir_id
 
