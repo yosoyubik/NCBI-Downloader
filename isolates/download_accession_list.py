@@ -228,7 +228,7 @@ def ProcessExperimentSeparate(experiment_id, json, batch_dir, sample_dir_id, pre
                     sfiles = [x for x in os.listdir(sample_dir) if any([y in x for y in ['fq','fastq']])]
                 else:
                     sfiles = []
-                if not preserve or len(sfiles) == 0:
+                if not preserve or not skip_files or len(sfiles) == 0:
                     sfiles = DownloadRunFiles(runid, tmpdir)
                 if sfiles is not None:
                     success = CreateSampleDir(sfiles, m, sample_dir, preserve, skip_files)
@@ -257,7 +257,7 @@ def ProcessExperimentCombined(experiment_id, json, batch_dir, sample_dir_id, pre
             csfiles = []
             if preserve and os.path.exists(sample_dir):
                 csfiles = [x for x in os.listdir(sample_dir) if any([y in x for y in ['fq','fastq']])]
-            if csfiles ==[]:
+            if csfiles == [] and not skip_files:
                 sfiles = []
                 for runid in m.runIDs:
                     sf = DownloadRunFiles(runid, tmpdir)
@@ -292,7 +292,7 @@ def ProcessExperimentCombined(experiment_id, json, batch_dir, sample_dir_id, pre
                     _logger.error("Files could not be combined! (%s)",
                                   experiment_id)
                     failed_accession.append(experiment_id)
-            if csfiles != []:
+            if csfiles != [] or skip_files:
                 success = CreateSampleDir(csfiles, m, sample_dir, preserve, skip_files)
                 if success:
                     sample_dir_id += 1
