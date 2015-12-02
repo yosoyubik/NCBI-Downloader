@@ -39,8 +39,8 @@ class metadata_obj(object):
         match1 = re.findall(r'Accession: (.+)', qdata)
         match2 = re.findall(r'Study accession: (.+)', qdata)
         if match1 and match2:
-            self.accessions['experiment'] = match1[0]
-            self.accessions['study'] = match2[0]
+            self.accessions['experiment'] = match1[0].strip()
+            self.accessions['study'] = match2[0].strip()
             # Extract the SRA sample ID using the SRA experiment ID
             with openurl(self.sra_url%(self.accessions['study'])) as u:
                 sdata = u.read()
@@ -53,6 +53,14 @@ class metadata_obj(object):
                         self.accessions['sample'] = tmp[1].split('(')[-1].strip(' )')
                 elif l.split(':')[-1].strip() == self.accessions['experiment']:
                     flag = True
+            if not 'sample' in self.accessions:
+                # NCBI has an error with their project!
+                # TODO: Notify NCBI
+                # Fall back fix: Look for sample accession in qdata
+                # Sample Accession: ERS049889
+                match3A = re.findall(r'Sample Accession: (.+)', qdata)
+                if match3A:
+                    self.accessions['sample'] = match3A[0].strip()
             if 'sample' in self.accessions:
                 # Extract the BioSample ID using the SRA sample ID
                 with openurl(self.bio_url%(self.accessions['sample'])) as u:
@@ -172,9 +180,8 @@ class metadata_obj(object):
         :param: dir
         :return: True
         '''
-        f = open('%s/meta.json' % dir, 'w')
-        f.write(json.dumps(self.metadata, ensure_ascii=False))
-        f.close()
+        with open('%s/meta.json' % dir, 'w') as f:
+            f.write(json.dumps(self.metadata, ensure_ascii=False).encode('utf-8'))
         return True
     def update_files(self, files):
         '''
