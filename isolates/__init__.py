@@ -118,12 +118,12 @@ except:
 # Setup Mail Wrapper
 fqdn = socket.getfqdn()
 if 'cbs.dtu.dk' in fqdn:
-    mail = mail_obj(['mcft@cbs.dtu.dk'],
+    mail = mail_obj(['cgecurator@cbs.dtu.dk'],
                     'mail-deamon@cbs.dtu.dk',
-                    'cgehelp@cbs.dtu.dk')
+                    'cgecurator@cbs.dtu.dk')
 elif any([x in fqdn for x in ['computerome', 'risoe']]):
-    mail = mail_obj(['mcft@cbs.dtu.dk'],
+    mail = mail_obj(['cgecurator@cbs.dtu.dk'],
                     'mail-deamon@computerome.dtu.dk',
-                    'cgehelp@cbs.dtu.dk')
+                    'cgecurator@cbs.dtu.dk')
 else:
     mail = None
