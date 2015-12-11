@@ -326,10 +326,20 @@ class metadata_obj(object):
         if val not in location_hash.keys():
             try:
                 g = geocoder.google(val)
+                if g.status != 'OK':
+                    if ',' in val:
+                        # Try with only country
+                        val2 = val.split(',')[0]
+                        _logger.warning(
+                            ('Geocoder failed (%s)!,'
+                             'trying with country only... (%s)'), val, val2)
+                        g = geocoder.google(val2)
+                        if g.status != 'OK':
+                            raise Exception(g.status)
+                    else:
+                        raise Exception(g.status)
             except Exception, e:
-                _logger.warning(
-                    'Geocoder error %s', query
-                )
+                _logger.warning('Geocoder error %s', query)
                 location_hash[val] = ('', '', '', '', val)
             else:
                 geo_dict['longitude'] = g.lng
