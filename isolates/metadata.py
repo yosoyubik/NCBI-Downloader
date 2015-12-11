@@ -36,13 +36,15 @@ class metadata_obj(object):
     def ExtractData(self, query):
         ''' Extract Sample Metadata '''
         # New approach using runinfo list
-        url = 'http://trace.ncbi.nlm.nih.gov?save=efetch&db=sra&rettype=runinfo&term=ERS607960'
         with openurl(self.sra_url1%(query)) as u:
             headers = u.readline().split(',')
             indexes = [(x, headers.index(x)) for x in ["Run", "Experiment",
                 "Sample", "SRAStudy", "BioSample", "Platform", "LibraryLayout",
                 "SampleName", "ScientificName", "CenterName"]]
             for l in u:
+                l = l.strip()
+                if l == '': continue
+                if l[0] == '#': continue
                 d = l.split(',')
                 self.accessions['run'] = d[indexes[0][1]]
                 self.accessions['experiment'] = d[indexes[1][1]]
@@ -54,6 +56,7 @@ class metadata_obj(object):
                 self['sample_name'] = d[indexes[7][1]]
                 self['organism'] = d[indexes[8][1]]
                 self['collected_by'] = d[indexes[9][1]]
+                self['biosample'] = self.accessions['biosample']
                 break # Just use the first entry!
                 # Should be fixed to handle different query sequences!!!
         with openurl(self.sra_url2%(query)) as u: qdata = u.read()
