@@ -60,59 +60,6 @@ class metadata_obj(object):
                 break # Just use the first entry!
                 # Should be fixed to handle different query sequences!!!
         with openurl(self.sra_url2%(query)) as u: qdata = u.read()
-        # Extract the SRA experiment ID and project ID using the SRA run ID
-        # match1 = re.findall(r'Accession: (.+)', qdata)
-        # match2 = re.findall(r'Study accession: (.+)', qdata)
-        # if match1 and match2:
-        #     self.accessions['experiment'] = match1[0].strip()
-        #     self.accessions['study'] = match2[0].strip()
-        #     # Extract the SRA sample ID using the SRA experiment ID
-        #     with openurl(self.sra_url%(self.accessions['study'])) as u:
-        #         sdata = u.read()
-        #     flag = False
-        #     for l in sdata.split('\n'):
-        #         if flag:
-        #             if l.strip() == '': break
-        #             tmp = l.split(':')
-        #             if tmp[0] == 'Sample':
-        #                 self.accessions['sample'] = tmp[1].split('(')[-1].strip(' )')
-        #         elif l.split(':')[-1].strip() == self.accessions['experiment']:
-        #             flag = True
-        #     if not 'sample' in self.accessions:
-        #         # NCBI has an error with their project!
-        #         # TODO: Notify NCBI
-        #         # Fall back fix: Look for sample accession in qdata
-        #         # Sample Accession: ERS049889
-        #         match3A = re.findall(r'Sample Accession: (.+)', qdata)
-        #         if match3A:
-        #             self.accessions['sample'] = match3A[0].strip()
-        #     if 'sample' in self.accessions:
-        #         # Extract the BioSample ID using the SRA sample ID
-        #         with openurl(self.bio_url%(self.accessions['sample'])) as u:
-        #             bdata = u.read()
-        #         match3 = re.findall(r'Identifiers: (.+)\n', bdata)
-        #         if match3:
-        #             for ent in match3[0].split(';'):
-        #                 tmp = ent.split(':')
-        #                 if tmp[0].strip().lower() == 'biosample':
-        #                     self.accessions['biosample'] = tmp[1].strip()
-        #                     self['biosample'] = self.accessions['biosample']
-        #                     break
-        #         # Extract Organism
-        #         match4 = re.findall(r'Organism: (.+)\n', bdata)
-        #         if match4:
-        #             self['organism'] = ' '.join(match4[0].split()[:2])
-        #         else:
-        #             self['organism'] = ''
-        #         # Sample Name
-        #         match5 = re.findall(r'Sample name: (.+)', bdata)
-        #         if (match5 and
-        #             match5[0].split(';')[0].lower() not in
-        #             ['unidentified', 'missing', 'unknown', 'na']
-        #             ):
-        #             self['sample_name'] = match5[0].split(';')[0]
-        #         else:
-        #             self['sample_name'] = self.accessions['query']
         # Extract sample attributes
         match = re.findall(r'Sample Attributes: (.+)\n', qdata)
         lcs = {} # location parts
@@ -174,18 +121,6 @@ class metadata_obj(object):
             if lcs != {}:
                 h = ['country', 'region', 'city', 'zip_code']
                 self.__interpret_loc( ','.join([lcs[x] for x in h if x in lcs]))
-        # Extract sequencing_platform
-        # match = re.findall(r'Platform Name: (.+)\n', qdata)
-        # if match:
-        #     self['sequencing_platform'] = platforms.get(
-        #         match[0].lower(), 'unknown'
-        #     )
-        # else:
-        #     self['sequencing_platform'] = 'unknown'
-        # # Extract sequencing_type
-        # match = re.findall(r'Library Layout: (.+)\n', qdata)
-        # if match:
-        #     self['sequencing_type'] = match[0].split(',')[0].lower()
         # Extract Run IDs associated with the sample
         #Run #1: ERR276921, 1356661 spots, 271332200 bases
         self.runIDs = re.findall(r'Run #\d+: (.+?),.+', qdata)
@@ -393,7 +328,6 @@ def ExtractExperimentIDs_acc(sample_accession):
     '''
     experiments = {}
     sra_url = 'http://www.ncbi.nlm.nih.gov/Traces/sra/sra.cgi?save=efetch&db=sra&rettype=runinfo&term=%s'
-    # sra_url = 'http://www.ncbi.nlm.nih.gov/sra/?term=%s&format=text'
     with openurl(sra_url%(sample_accession)) as u:
         headers = u.readline()
         try:
@@ -408,37 +342,6 @@ def ExtractExperimentIDs_acc(sample_accession):
                 exp = l.split(',')[idx].strip()
                 if not exp in experiments: experiments[exp] = 1
     return experiments.keys()
-        # fline = ''
-        # while fline == '':
-        #     fline = u.readline()
-        #     while '<' in fline:
-        #         start, end = fline.index('<'), fline.index('>')+1
-        #         if start > -1 and end > -1:
-        #             fline = fline[:start] + fline[end:]
-        #         else: break
-        #     fline = fline.strip()
-        # if not 'Build' in fline:
-        #     tmp = fline.split(':')
-        #     if tmp[0].strip() == 'Accession':
-        #         experiments.append(tmp[1].strip())
-        # else:
-        #     x = None
-        #     for l in u:
-        #         l = l.strip()
-        #         if l == '':
-        #             x = None
-        #             continue
-        #         if ':' in l:
-        #             tmp = l.split(':')
-        #             if len(tmp[1]) > 3 and tmp[1][:3] in ['ERX', 'SRX']:
-        #                 x = tmp[1]
-        #             if tmp[0] == 'Total' and x is not None:
-        #                 try: runs = int(tmp[1].split()[0])
-        #                 except: pass
-        #                 else:
-        #                     if runs > 0:
-        #                         experiments.append(x)
-    # return experiments
 
 def ExtractExperimentIDs_tax(taxid):
     ''' Extract experiments which have runs associated from taxid
@@ -481,7 +384,6 @@ def ExtractTaxIDfromSearchTerm(query):
     >>> ExtractTaxIDfromSearchTerm('Salmonella')
     590
     '''
-    # http://www.ncbi.nlm.nih.gov/taxonomy/?term=Salmonella%20entericalis&report=taxid&format=text
     ncbi_url = 'http://www.ncbi.nlm.nih.gov/taxonomy/?term=%s&report=taxid'%(
         query)
     # Find number of entries for the provided taxid 
@@ -495,4 +397,3 @@ def ExtractTaxIDfromSearchTerm(query):
             try: taxid = int(l)
             except: print("Error: Unhandled result from taxid search! (%s)"%l)
     return taxid
-
