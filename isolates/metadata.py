@@ -475,3 +475,24 @@ def ExtractExperimentIDs_tax(taxid):
                     else:
                         print("Unknown Experiment ID: %s (taxid=%s)"%(l,taxid))
     return experiments
+
+def ExtractTaxIDfromSearchTerm(query):
+    ''' Extract taxonomy ID from NCBI taxonomy search
+    >>> ExtractTaxIDfromSearchTerm('Salmonella')
+    590
+    '''
+    # http://www.ncbi.nlm.nih.gov/taxonomy/?term=Salmonella%20entericalis&report=taxid&format=text
+    ncbi_url = 'http://www.ncbi.nlm.nih.gov/taxonomy/?term=%s&report=taxid'%(
+        query)
+    # Find number of entries for the provided taxid 
+    taxid = None
+    with openurl(ncbi_url) as u:
+        for l in u:
+            # remove html tags
+            l = re.sub('<.+?>', '', l)
+            l = l.strip()
+            if l == '': continue
+            try: taxid = int(l)
+            except: print("Error: Unhandled result from taxid search! (%s)"%l)
+    return taxid
+
