@@ -34,7 +34,6 @@ default = {
         "pre_assembled",
         "sequencing_platform",
         "sequencing_type",
-        "pre_assembled",
         "country",
         "isolation_source",
         "collection_date"

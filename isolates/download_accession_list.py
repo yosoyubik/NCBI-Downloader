@@ -65,6 +65,13 @@ def parse_args_accessions(args):
         help='JSON file with seed attributes and mandatory fields\n'
     )
     parser.add_argument(
+        '-out',
+        nargs=1,
+        metavar=('OUTPUT'),
+        required=True,
+        help='Path to save isolates'
+    )
+    parser.add_argument(
         '-p',
         '--preserve',
         action="store_true",
@@ -81,11 +88,12 @@ def parse_args_accessions(args):
               'Default is to combine them into one run.\n')
     )
     parser.add_argument(
-        '-out',
-        nargs=1,
-        metavar=('OUTPUT'),
-        required=True,
-        help='Path to save isolates'
+        '--skip_files',
+        action="store_true",
+        dest="skip_files",
+        default=False,
+        help=('Treat all runs associated to a sample as separate samples. '
+              'Default is to combine them into one run.\n')
     )
     return parser.parse_args(args)
 
@@ -102,18 +110,18 @@ def DownloadRunFiles(runid, tmpdir):
         _logger.error(e)
         return None
 
-def CreateSampleDir(sfiles, m, sample_dir, preserve=False):
+def CreateSampleDir(sfiles, m, sample_dir, preserve=False, skip_files=False):
     sample_dir = str(sample_dir)
-    if len(sfiles) == 0:
-        _logger.error("Error: No files were found! (%s)", sample_dir)
-        return False
+    if not skip_files and len(sfiles) == 0:
+            _logger.error("Error: No files were found! (%s)", sample_dir)
+            return False
     if not os.path.exists(sample_dir):
         _logger.info("Create sample dir: %s", sample_dir)
         # Create 'sample' dir
         os.mkdir(sample_dir)
         # Move files from tmpdir to sample dir
         for sf in sfiles: move(sf, sample_dir)
-    elif not preserve:
+    elif not preserve and not skip_files:
         # Empty sample directory
         for fn in os.listdir(sample_dir):
             os.unlink("%s/%s"%(sample_dir, fn))
@@ -133,7 +141,7 @@ def CreateSampleDir(sfiles, m, sample_dir, preserve=False):
     else:
         return True
 
-def download_fastq_from_list(accession_list, output, json, preserve=False, all_runs_as_samples=False):
+def download_fastq_from_list(accession_list, output, json, preserve=False, all_runs_as_samples=False, skip_files=False):
     """
     Get Fastq from list of IDs
 
@@ -176,15 +184,15 @@ def download_fastq_from_list(accession_list, output, json, preserve=False, all_r
                 for experiment_id in ExtractExperimentIDs_acc(accession):
                     sample_dir_id = ProcessExperiment(
                         experiment_id, json, batch_dir,sample_dir_id, preserve,
-                        failed_accession, all_runs_as_samples)
+                        failed_accession, all_runs_as_samples, skip_files)
             elif accession_type == 'experiment':
                 sample_dir_id = ProcessExperiment(
                     accession, json, batch_dir,sample_dir_id, preserve,
-                    failed_accession, all_runs_as_samples)
+                    failed_accession, all_runs_as_samples, skip_files)
             elif accession_type == 'run':
                 sample_dir_id = ProcessExperiment(
                     accession, json, batch_dir,sample_dir_id, preserve,
-                    failed_accession, all_runs_as_samples)
+                    failed_accession, all_runs_as_samples, skip_files)
             pbar.update(i)
         pbar.finish()
         if failed_accession:
@@ -193,19 +201,19 @@ def download_fastq_from_list(accession_list, output, json, preserve=False, all_r
         else:
             _logger.info("All accessions downloaded succesfully!")
 
-def ProcessExperiment(experiment_id, json, batch_dir, sample_dir_id, preserve, failed_accession, all_runs_as_samples):
+def ProcessExperiment(experiment_id, json, batch_dir, sample_dir_id, preserve, failed_accession, all_runs_as_samples, skip_files=False):
     _logger.info("Processing %s...", experiment_id)
     if all_runs_as_samples:
         sample_dir_id = ProcessExperimentSeparate(
             experiment_id, json, batch_dir, sample_dir_id,
-            preserve, failed_accession)
+            preserve, failed_accession, skip_files)
     else:
         sample_dir_id = ProcessExperimentCombined(
             experiment_id, json, batch_dir, sample_dir_id,
-            preserve, failed_accession)
+            preserve, failed_accession, skip_files)
     return sample_dir_id
 
-def ProcessExperimentSeparate(experiment_id, json, batch_dir, sample_dir_id, preserve, failed_accession):
+def ProcessExperimentSeparate(experiment_id, json, batch_dir, sample_dir_id, preserve, failed_accession, skip_files=False):
     m = ExtractExperimentMetadata(experiment_id, json)
     if m.valid_metadata():
         # Check if a run ID was submitted, and if so only process that
@@ -220,10 +228,10 @@ def ProcessExperimentSeparate(experiment_id, json, batch_dir, sample_dir_id, pre
                     sfiles = [x for x in os.listdir(sample_dir) if any([y in x for y in ['fq','fastq']])]
                 else:
                     sfiles = []
-                if not preserve or len(sfiles) == 0:
+                if not preserve or not skip_files or len(sfiles) == 0:
                     sfiles = DownloadRunFiles(runid, tmpdir)
                 if sfiles is not None:
-                    success = CreateSampleDir(sfiles, m, sample_dir, preserve)
+                    success = CreateSampleDir(sfiles, m, sample_dir, preserve, skip_files)
                     if success:
                         sample_dir_id += 1
                     else:
@@ -236,7 +244,7 @@ def ProcessExperimentSeparate(experiment_id, json, batch_dir, sample_dir_id, pre
         failed_accession.append(experiment_id)
     return sample_dir_id
 
-def ProcessExperimentCombined(experiment_id, json, batch_dir, sample_dir_id, preserve, failed_accession):
+def ProcessExperimentCombined(experiment_id, json, batch_dir, sample_dir_id, preserve, failed_accession, skip_files=False):
     m = ExtractExperimentMetadata(experiment_id, json)
     if m.valid_metadata():
         # Check if a run ID was submitted, and if so only process that
@@ -249,7 +257,7 @@ def ProcessExperimentCombined(experiment_id, json, batch_dir, sample_dir_id, pre
             csfiles = []
             if preserve and os.path.exists(sample_dir):
                 csfiles = [x for x in os.listdir(sample_dir) if any([y in x for y in ['fq','fastq']])]
-            if csfiles ==[]:
+            if csfiles == [] and not skip_files:
                 sfiles = []
                 for runid in m.runIDs:
                     sf = DownloadRunFiles(runid, tmpdir)
@@ -284,8 +292,8 @@ def ProcessExperimentCombined(experiment_id, json, batch_dir, sample_dir_id, pre
                     _logger.error("Files could not be combined! (%s)",
                                   experiment_id)
                     failed_accession.append(experiment_id)
-            if csfiles != []:
-                success = CreateSampleDir(csfiles, m, sample_dir, preserve)
+            if csfiles != [] or skip_files:
+                success = CreateSampleDir(csfiles, m, sample_dir, preserve, skip_files)
                 if success:
                     sample_dir_id += 1
                 else:
@@ -310,7 +318,7 @@ def download_accession_list():
                 exit()
         else:
             default = None
-        download_fastq_from_list(args.a[0], args.out[0], default, args.preserve, args.all_runs_as_samples)
+        download_fastq_from_list(args.a[0], args.out[0], default, args.preserve, args.all_runs_as_samples, args.skip_files)
     else:
         print('Usage: -a PATH -o ORGANISM -out PATH [-m JSON]')
 

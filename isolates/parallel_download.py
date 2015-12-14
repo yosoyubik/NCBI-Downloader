@@ -7,7 +7,9 @@ from pipes import quote
 
 from isolates import __version__, ceil
 from source import acctypes
-from isolates.metadata import ExtractExperimentIDs_acc, ExtractExperimentIDs_tax
+from isolates.metadata import (ExtractExperimentIDs_acc,
+                               ExtractExperimentIDs_tax,
+                               ExtractTaxIDfromSearchTerm)
 
 def parse_args(args):
     ''' Parse command line parameters '''
@@ -86,9 +88,17 @@ def SetupParallelDownload(accession_list):
             elif accession.isdigit(): # asume all integers to be taxids
                 accession_type = "taxid"
             else:
-                print("unknown accession type for '%s'!"%accession)
-                failed_accession.append(accession)
-                continue
+                # Try searching for a matching Taxid from the search query
+                taxid = ExtractTaxIDfromSearchTerm(accession)
+                if taxid is not None:
+                    print(("The query %s was identified to have the following "
+                           "taxid: %s")%(accession, taxid))
+                    accession_type = "taxid"
+                    accession = taxid
+                else:
+                    print("unknown accession type for '%s'!"%accession)
+                    failed_accession.append(accession)
+                    continue
             print("Acc Found: %s (%s)"%(accession, accession_type))
             if accession_type in ['study', 'sample']:
                 experiments.extend(ExtractExperimentIDs_acc(accession))

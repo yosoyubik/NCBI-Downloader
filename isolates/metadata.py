@@ -24,7 +24,8 @@ class metadata_obj(object):
         self.accessions = {'query': accession}
         # Set metadata collection site URL
         ncbi = 'http://www.ncbi.nlm.nih.gov'
-        self.sra_url = '%s/sra/?term=%s&format=text'%(ncbi, '%s')
+        self.sra_url1 = '%s/Traces/sra/sra.cgi?save=efetch&db=sra&rettype=runinfo&term=%s'%(ncbi, '%s')
+        self.sra_url2 = '%s/sra/?term=%s&format=text'%(ncbi, '%s')
         self.bio_url = '%s/biosample/?term=%s&format=text' %(ncbi, '%s')
         # Extract Sample Metadata
         self.ExtractData(accession)
@@ -34,52 +35,31 @@ class metadata_obj(object):
         self.metadata[key] = value
     def ExtractData(self, query):
         ''' Extract Sample Metadata '''
-        with openurl(self.sra_url%(query)) as u: qdata = u.read()
-        # Extract the SRA experiment ID and project ID using the SRA run ID
-        match1 = re.findall(r'Accession: (.+)', qdata)
-        match2 = re.findall(r'Study accession: (.+)', qdata)
-        if match1 and match2:
-            self.accessions['experiment'] = match1[0]
-            self.accessions['study'] = match2[0]
-            # Extract the SRA sample ID using the SRA experiment ID
-            with openurl(self.sra_url%(self.accessions['study'])) as u:
-                sdata = u.read()
-            flag = False
-            for l in sdata.split('\n'):
-                if flag:
-                    if l.strip() == '': break
-                    tmp = l.split(':')
-                    if tmp[0] == 'Sample':
-                        self.accessions['sample'] = tmp[1].split('(')[-1].strip(' )')
-                elif l.split(':')[-1].strip() == self.accessions['experiment']:
-                    flag = True
-            if 'sample' in self.accessions:
-                # Extract the BioSample ID using the SRA sample ID
-                with openurl(self.bio_url%(self.accessions['sample'])) as u:
-                    bdata = u.read()
-                match3 = re.findall(r'Identifiers: (.+)\n', bdata)
-                if match3:
-                    for ent in match3[0].split(';'):
-                        tmp = ent.split(':')
-                        if tmp[0].strip().lower() == 'biosample':
-                            self.accessions['biosample'] = tmp[1].strip()
-                            self['biosample'] = self.accessions['biosample']
-                            break
-                # Extract Organism
-                match4 = re.findall(r'Organism: (.+)\n', bdata)
-                if match4:
-                    self['organism'] = ' '.join(match4[0].split()[:2])
-                else:
-                    self['organism'] = ''
-                # Sample Name
-                match5 = re.findall(r'Sample name: (.+)', bdata)
-                if (match5 and
-                    match5[0].split(';')[0].lower() not in
-                    ['unidentified', 'missing', 'unknown', 'na']
-                    ):
-                    self['sample_name'] = match5[0].split(';')[0]
-                else:
-                    self['sample_name'] = self.accessions['query']
+        # New approach using runinfo list
+        with openurl(self.sra_url1%(query)) as u:
+            headers = u.readline().split(',')
+            indexes = [(x, headers.index(x)) for x in ["Run", "Experiment",
+                "Sample", "SRAStudy", "BioSample", "Platform", "LibraryLayout",
+                "SampleName", "ScientificName", "CenterName"]]
+            for l in u:
+                l = l.strip()
+                if l == '': continue
+                if l[0] == '#': continue
+                d = l.split(',')
+                self.accessions['run'] = d[indexes[0][1]]
+                self.accessions['experiment'] = d[indexes[1][1]]
+                self.accessions['sample'] = d[indexes[2][1]]
+                self.accessions['study'] = d[indexes[3][1]]
+                self.accessions['biosample'] = d[indexes[4][1]]
+                self['sequencing_platform'] = d[indexes[5][1]]
+                self['sequencing_type'] = d[indexes[6][1]]
+                self['sample_name'] = d[indexes[7][1]]
+                self['organism'] = d[indexes[8][1]]
+                self['collected_by'] = d[indexes[9][1]]
+                self['biosample'] = self.accessions['biosample']
+                break # Just use the first entry!
+                # Should be fixed to handle different query sequences!!!
+        with openurl(self.sra_url2%(query)) as u: qdata = u.read()
         # Extract sample attributes
         match = re.findall(r'Sample Attributes: (.+)\n', qdata)
         lcs = {} # location parts
@@ -141,18 +121,6 @@ class metadata_obj(object):
             if lcs != {}:
                 h = ['country', 'region', 'city', 'zip_code']
                 self.__interpret_loc( ','.join([lcs[x] for x in h if x in lcs]))
-        # Extract sequencing_platform
-        match = re.findall(r'Platform Name: (.+)\n', qdata)
-        if match:
-            self['sequencing_platform'] = platforms.get(
-                match[0].lower(), 'unknown'
-            )
-        else:
-            self['sequencing_platform'] = 'unknown'
-        # Extract sequencing_type
-        match = re.findall(r'Library Layout: (.+)\n', qdata)
-        if match:
-            self['sequencing_type'] = match[0].split(',')[0].lower()
         # Extract Run IDs associated with the sample
         #Run #1: ERR276921, 1356661 spots, 271332200 bases
         self.runIDs = re.findall(r'Run #\d+: (.+?),.+', qdata)
@@ -172,9 +140,8 @@ class metadata_obj(object):
         :param: dir
         :return: True
         '''
-        f = open('%s/meta.json' % dir, 'w')
-        f.write(json.dumps(self.metadata, ensure_ascii=False))
-        f.close()
+        with open('%s/meta.json' % dir, 'w') as f:
+            f.write(json.dumps(self.metadata, ensure_ascii=False).encode('utf-8'))
         return True
     def update_files(self, files):
         '''
@@ -294,10 +261,20 @@ class metadata_obj(object):
         if val not in location_hash.keys():
             try:
                 g = geocoder.google(val)
+                if g.status != 'OK':
+                    if ',' in val:
+                        # Try with only country
+                        val2 = val.split(',')[0]
+                        _logger.warning(
+                            ('Geocoder failed (%s)!,'
+                             'trying with country only... (%s)'), val, val2)
+                        g = geocoder.google(val2)
+                        if g.status != 'OK':
+                            raise Exception(g.status)
+                    else:
+                        raise Exception(g.status)
             except Exception, e:
-                _logger.warning(
-                    'Geocoder error %s', query
-                )
+                _logger.warning('Geocoder error %s', query)
                 location_hash[val] = ('', '', '', '', val)
             else:
                 geo_dict['longitude'] = g.lng
@@ -344,45 +321,27 @@ def ExtractExperimentMetadata(accession, json=None):
 
 def ExtractExperimentIDs_acc(sample_accession):
     ''' Extract experiments which have runs associated
-    >>> ExtractExperimentIDs('ERS397989')
+    >>> ExtractExperimentIDs_acc('ERS397989')
     ['ERX385098']
-    >>> ExtractExperimentIDs('SRS024887')
-    ['ERX538423', 'ERX530563', 'ERX530562', 'ERX012725', 'ERX183566', 'ERX012726', 'ERX064280']
+    >>> ExtractExperimentIDs_acc('SRS331977')
+    ['SRX146831', 'SRX365746', 'SRX146834', 'SRX146829', 'SRX146822', 'SRX146814', 'SRX146806']
     '''
-    experiments = []
-    sra_url = 'http://www.ncbi.nlm.nih.gov/sra/?term=%s&format=text'
+    experiments = {}
+    sra_url = 'http://www.ncbi.nlm.nih.gov/Traces/sra/sra.cgi?save=efetch&db=sra&rettype=runinfo&term=%s'
     with openurl(sra_url%(sample_accession)) as u:
-        fline = ''
-        while fline == '':
-            fline = u.readline()
-            while '<' in fline:
-                start, end = fline.index('<'), fline.index('>')+1
-                if start > -1 and end > -1:
-                    fline = fline[:start] + fline[end:]
-                else: break
-            fline = fline.strip()
-        if not 'Build' in fline:
-            tmp = fline.split(':')
-            if tmp[0].strip() == 'Accession':
-                experiments.append(tmp[1].strip())
+        headers = u.readline()
+        try:
+            idx = headers.split(',').index("Experiment")
+        except:
+            print headers
         else:
-            x = None
             for l in u:
                 l = l.strip()
-                if l == '':
-                    x = None
-                    continue
-                if ':' in l:
-                    tmp = l.split(':')
-                    if len(tmp[1]) > 3 and tmp[1][:3] in ['ERX', 'SRX']:
-                        x = tmp[1]
-                    if tmp[0] == 'Total' and x is not None:
-                        try: runs = int(tmp[1].split()[0])
-                        except: pass
-                        else:
-                            if runs > 0:
-                                experiments.append(x)
-    return experiments
+                if l == '': continue
+                if l[0] == '#': continue
+                exp = l.split(',')[idx].strip()
+                if not exp in experiments: experiments[exp] = 1
+    return experiments.keys()
 
 def ExtractExperimentIDs_tax(taxid):
     ''' Extract experiments which have runs associated from taxid
@@ -419,3 +378,22 @@ def ExtractExperimentIDs_tax(taxid):
                     else:
                         print("Unknown Experiment ID: %s (taxid=%s)"%(l,taxid))
     return experiments
+
+def ExtractTaxIDfromSearchTerm(query):
+    ''' Extract taxonomy ID from NCBI taxonomy search
+    >>> ExtractTaxIDfromSearchTerm('Salmonella')
+    590
+    '''
+    ncbi_url = 'http://www.ncbi.nlm.nih.gov/taxonomy/?term=%s&report=taxid'%(
+        query)
+    # Find number of entries for the provided taxid 
+    taxid = None
+    with openurl(ncbi_url) as u:
+        for l in u:
+            # remove html tags
+            l = re.sub('<.+?>', '', l)
+            l = l.strip()
+            if l == '': continue
+            try: taxid = int(l)
+            except: print("Error: Unhandled result from taxid search! (%s)"%l)
+    return taxid
