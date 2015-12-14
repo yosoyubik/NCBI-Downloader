@@ -7,7 +7,9 @@ from pipes import quote
 
 from isolates import __version__, ceil
 from source import acctypes
-from isolates.metadata import ExtractExperimentIDs_acc, ExtractExperimentIDs_tax
+from isolates.metadata import (ExtractExperimentIDs_acc,
+                               ExtractExperimentIDs_tax,
+                               ExtractTaxIDfromSearchTerm)
 
 def parse_args(args):
     ''' Parse command line parameters '''
