@@ -35,6 +35,7 @@ class metadata_obj(object):
         self.metadata[key] = value
     def ExtractData(self, query):
         ''' Extract Sample Metadata '''
+        new_ontologies = {}
         # New approach using runinfo list
         with openurl(self.sra_url1%(query)) as u:
             headers = u.readline().split(',')
@@ -91,14 +92,7 @@ class metadata_obj(object):
                             'Source not identified: %s, %s',
                             val, query
                         )
-                        # Notify Curators By Email
-                        if mail is not None:
-                            _logger.debug(mail.test('New isolation source...',
-                                            'Source not identified: %s, %s'%(
-                                            val, query)))
-                            mail.send('New isolation source...',
-                                      'Source not identified: %s, %s'%(
-                                          val, query))
+                        if not val in new_ontologies: new_ontologies[val] = query
                     self['source_note'] = val
                 elif att == 'BioSample':
                     self['biosample'] = val
@@ -124,6 +118,18 @@ class metadata_obj(object):
         # Extract Run IDs associated with the sample
         #Run #1: ERR276921, 1356661 spots, 271332200 bases
         self.runIDs = re.findall(r'Run #\d+: (.+?),.+', qdata)
+        # Notify Curators By Email
+        if mail is not None and len(new_ontologies)>0:
+            _logger.debug(mail.test(
+                'New isolation source...',
+                'Sources not identified:\n%s\n'%(
+                    '\n'.join([', '.join(e) for e in new_ontologies.items()]))
+                ))
+            mail.send(
+                'New isolation source...',
+                'Sources not identified:\n%s\n'%(
+                    '\n'.join([', '.join(e) for e in new_ontologies.items()]))
+                )
     def valid_metadata(self):
         '''
         Checks if metadata is valid
