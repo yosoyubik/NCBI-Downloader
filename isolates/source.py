@@ -49,7 +49,7 @@ else:
                         ontology.append({})
                     continue
                 if not ',' in l: continue
-                tmp = l.strip().split(',')
+                tmp = l.split(',')
                 if not tmp[0] in ontology[-1]:
                     ontology[-1][tmp[0]] = tmp[1:]
                 else: print "Ontology doublicate found! Please fix (%s)"%tmp[0]
