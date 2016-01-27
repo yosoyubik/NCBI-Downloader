@@ -17,7 +17,7 @@ from isolates.template import (metadata as metadata_template,
 class metadata_obj(object):
     ''' This class describes metadata associated with a sample '''
     def __init__(self, accession, settings=None):
-        if settings is None: settings = metadata_default
+        if settings is None: settings = default_metadata
         self.metadata = metadata_template
         self.metadata.update(settings["seed"])
         self.mandatory = settings['mandatory']
