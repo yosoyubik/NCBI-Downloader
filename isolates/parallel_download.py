@@ -143,6 +143,7 @@ def main():
     # Remove doublicate experiments
     experiments = list(set(experiments))
     elen = len(experiments)
+    print("Found %s unique experiment Accessions IDs!"%(elen))
     if elen > 0:
         # Create out directory
         cwd = os.getcwd()
