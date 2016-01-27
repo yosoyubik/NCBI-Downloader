@@ -140,6 +140,8 @@ def main():
             taxfile = 'tmp.tax'
             with open(taxfile, 'w') as f: f.write('\n'.join(args.t.split(',')))
         experiments.extend(SetupParallelDownload(taxfile))
+    # Remove doublicate experiments
+    experiments = list(set(experiments))
     elen = len(experiments)
     if elen > 0:
         # Create out directory
