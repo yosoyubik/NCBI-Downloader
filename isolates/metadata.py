@@ -93,6 +93,11 @@ class metadata_obj(object):
                             val, query
                         )
                         if not val in new_ontologies: new_ontologies[val] = query
+                    else:
+                        _logger.warning(
+                            'Source identified: %s, %s',
+                            val, query
+                        )
                     self['source_note'] = val
                 elif att == 'BioSample':
                     self['biosample'] = val
