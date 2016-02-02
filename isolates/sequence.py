@@ -3,11 +3,6 @@
 '''
 
 '''
-
-from source import ontology, platforms, location_hash
-import re
-import urllib
-import copy
 from path import Path
 from subprocess import call, PIPE
 

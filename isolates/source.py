@@ -4,10 +4,30 @@ from isolates import flipdict
 
 # List of known platforms
 platforms = {
-    'illumina': 'Illumina',
-    '454': 'LS454',
-    'torrent': 'Ion Torrent',
-    'solid': 'ABI SOLiD',
+    'illumina':         'Illumina',
+    '454':              'LS454',
+    'ls454':            'LS454',
+    'ion torrent':      'Ion Torrent',
+    'torrent':          'Ion Torrent',
+    'solid':            'ABI SOLiD',
+    'abi solid':        'ABI SOLiD',
+    'pac bio':          'unknown',
+    'pacbio':           'unknown',
+    'unknown':          'unknown',
+    'missing':          'unknown',
+    'na':               'unknown',
+    'not applicable':   'unknown',
+    'not known':        'unknown'
+}
+sequencing_types = {
+    'single':           'single',
+    'paired':           'paired',
+    'mate-paired':      'mate-paired',
+    'unknown':          'unknown',
+    'missing':          'unknown',
+    'na':               'unknown',
+    'not applicable':   'unknown',
+    'not known':        'unknown'
 }
 # 'preset': (country, region, city, zip, longitude, latitude, note)
 location_hash = {

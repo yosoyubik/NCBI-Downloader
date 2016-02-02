@@ -10,7 +10,8 @@ from datetime import datetime
 
 from isolates import mail, openurl, ceil
 from isolates.log import _logger
-from isolates.source import acctypes, ontology, platforms, location_hash
+from isolates.source import (acctypes, ontology, platforms, sequencing_types,
+                             location_hash)
 from isolates.template import (metadata as metadata_template,
                                default as default_metadata)
 
@@ -24,7 +25,11 @@ class metadata_obj(object):
         self.accessions = {'query': accession}
         # Set metadata collection site URL
         ncbi = 'http://www.ncbi.nlm.nih.gov'
-        self.sra_url1 = '%s/Traces/sra/sra.cgi?save=efetch&db=sra&rettype=runinfo&term=%s'%(ncbi, '%s')
+        self.sra_url1 = ('%s/Traces/sra/sra.cgi?'
+                         'save=efetch&'
+                         'db=sra&'
+                         'rettype=runinfo&'
+                         'term=%s')%(ncbi, '%s')
         self.sra_url2 = '%s/sra/?term=%s&format=text'%(ncbi, '%s')
         self.bio_url = '%s/biosample/?term=%s&format=text' %(ncbi, '%s')
         # Extract Sample Metadata
@@ -36,6 +41,8 @@ class metadata_obj(object):
     def ExtractData(self, query):
         ''' Extract Sample Metadata '''
         new_ontologies = {}
+        new_platforms = []
+        new_seqtypes = []
         # New approach using runinfo list
         with openurl(self.sra_url1%(query)) as u:
             headers = u.readline().split(',')
@@ -52,8 +59,20 @@ class metadata_obj(object):
                 self.accessions['sample'] = d[indexes[2][1]]
                 self.accessions['study'] = d[indexes[3][1]]
                 self.accessions['biosample'] = d[indexes[4][1]]
-                self['sequencing_platform'] = d[indexes[5][1]]
-                self['sequencing_type'] = d[indexes[6][1]]
+                platform = d[indexes[5][1]].lower()
+                if platform in platforms:
+                    self['sequencing_platform'] = platforms[platform]
+                else:
+                    self['sequencing_platform'] = 'unknown'
+                    if not platform in new_platforms:
+                        new_platforms.append(platform)
+                seqtype = d[indexes[6][1]].lower()
+                if seqtype in sequencing_types:
+                    self['sequencing_type'] = sequencing_types[seqtype]
+                else:
+                    self['sequencing_type'] = 'unknown'
+                    if not seqtype in new_seqtypes:
+                        new_seqtypes.append(seqtype)
                 self['sample_name'] = d[indexes[7][1]]
                 self['organism'] = d[indexes[8][1]]
                 self['collected_by'] = d[indexes[9][1]]
@@ -124,17 +143,29 @@ class metadata_obj(object):
         #Run #1: ERR276921, 1356661 spots, 271332200 bases
         self.runIDs = re.findall(r'Run #\d+: (.+?),.+', qdata)
         # Notify Curators By Email
-        if mail is not None and len(new_ontologies)>0:
-            _logger.debug(mail.test(
-                'New isolation source...',
-                'Sources not identified:\n%s\n'%(
-                    '\n'.join([', '.join(e) for e in new_ontologies.items()]))
-                ))
-            mail.send(
-                'New isolation source...',
-                'Sources not identified:\n%s\n'%(
-                    '\n'.join([', '.join(e) for e in new_ontologies.items()]))
-                )
+        if mail is not None:
+            if len(new_ontologies)>0:
+                _logger.debug(mail.test(
+                    'New isolation source...',
+                    'Sources not identified:\n%s\n'%(
+                        '\n'.join([', '.join(e) for e in new_ontologies.items()]))
+                    ))
+                mail.send(
+                    'New isolation source...',
+                    'Sources not identified:\n%s\n'%(
+                        '\n'.join([', '.join(e) for e in new_ontologies.items()]))
+                    )
+            if len(new_platforms)>0:
+                _logger.debug(mail.test(
+                    'New platforms...',
+                    'Platforms not accounted for:\n%s\n'%(
+                        '\n'.join(new_platforms))
+                    ))
+                mail.send(
+                    'New platforms...',
+                    'Platforms not accounted for:\n%s\n'%(
+                        '\n'.join(new_platforms))
+                    )
     def valid_metadata(self):
         '''
         Checks if metadata is valid
