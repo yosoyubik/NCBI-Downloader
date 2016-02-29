@@ -46,7 +46,7 @@ location_hash = {
 }
 
 acctypes = flipdict({ # flipdict reverses the dictionary!
-    'study':        ['PRJ', 'SRP', 'ERP', 'DRP'],
+    'study':        ['PRJ', 'SRP', 'ERP', 'DRP', 'SRA', 'ERA', 'DRA'],
     'sample':       ['SAM', 'SRS', 'ERS', 'DRS'],
     'experiment':   ['SRX', 'ERX', 'DRX'],
     'run':          ['SRR', 'ERR', 'DRR']
