@@ -3,5 +3,5 @@ DIR="$( dirname `readlink -f ${BASH_SOURCE[0]}` )"
 cd $DIR
 git stash
 git pull
-python setup.py install -r files.txt
+python setup.py install --record files.txt
 cd -
