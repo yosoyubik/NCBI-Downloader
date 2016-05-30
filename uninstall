@@ -1,7 +1,5 @@
 #!/bin/env bash
 DIR="$( dirname `readlink -f ${BASH_SOURCE[0]}` )"
 cd $DIR
-git stash
-git pull
-python setup.py install -r files.txt
+cat files.txt | xargs rm -rf
 cd -
