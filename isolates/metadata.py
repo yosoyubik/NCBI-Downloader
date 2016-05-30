@@ -163,6 +163,7 @@ class metadata_obj(object):
         #Run #1: ERR276921, 1356661 spots, 271332200 bases
         self.runIDs = re.findall(r'Run #\d+: (.+?),.+', qdata)
         # Notify Curators By Email
+        _logger.warning('Make mail?', mail is not None)
         if mail is not None:
             if len(self.new_ontologies) > 0:
                 _logger.debug(mail.test(
