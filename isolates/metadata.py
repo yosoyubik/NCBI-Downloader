@@ -103,7 +103,7 @@ class metadata_obj(object):
                     self['strain'] = val
                 elif att in ['isolation_source', 'isolation source']:
                     source = val
-                elif att in ['host']:
+                elif att in ['host', 'specific_host', 'specific host']:
                     host = val
                 elif att == 'BioSample':
                     self['biosample'] = val
