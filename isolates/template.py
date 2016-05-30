@@ -31,19 +31,17 @@ metadata = {
 
 default = {
     "mandatory": [
-        "pre_assembled",
         "sequencing_platform",
         "sequencing_type",
-        "country",
-        "isolation_source",
         "collection_date"
     ],
     "seed": {
         "pre_assembled": "no",
+        "country": "unknown",
+        "isolation_source": "unknown",
         "sample_type": "isolate",
         "organism": "",
         "pathogenic": "yes",
-        "usage_restrictions": "public",
-        "usage_delay": "0"
+        "usage_restrictions": "public"
     }
 }
