@@ -240,7 +240,7 @@ def ProcessExperimentSeparate(experiment_id, json, batch_dir, sample_dir_id, pre
                     _logger.error("Files could not be retrieved! (%s)", runid)
                     failed_accession.append(runid)
     else:
-        _logger.error("Metadata Invalid! (%s) - %s", experiment_id, m.metadata)
+        _logger.error("Metadata Invalid! (%s) - %s", experiment_id, m.metadata.items())
         failed_accession.append(experiment_id)
     return sample_dir_id
 
@@ -303,7 +303,7 @@ def ProcessExperimentCombined(experiment_id, json, batch_dir, sample_dir_id, pre
                               experiment_id)
                 failed_accession.append(experiment_id)
     else:
-        _logger.error("Metadata Invalid! (%s) - %s", experiment_id, m.metadata)
+        _logger.error("Metadata Invalid! (%s) - %s", experiment_id, m.metadata.items())
         failed_accession.append(experiment_id)
     return sample_dir_id
 
