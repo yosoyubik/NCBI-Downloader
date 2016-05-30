@@ -20,10 +20,14 @@ def setup_package():
 
 def install_shell_scripts():
     repo_dir = os.path.dirname(os.path.realpath(__file__))
-    src, dst = repo_dir +"/update", repo_dir +"/env/bin/update"
-    os.chmod(src, 484) #0744
-    if not os.path.exists(dst):
-        os.symlink(src, dst)
+    scripts = [
+        (repo_dir +"/update", repo_dir +"/env/bin/update"),
+        (repo_dir +"/uninstall", repo_dir +"/env/bin/uninstall")
+        ]
+    for src, dst in scripts:
+        os.chmod(src, 484) #0744
+        if not os.path.exists(dst):
+            os.symlink(src, dst)
 
 if __name__ == "__main__":
     setup_package()
