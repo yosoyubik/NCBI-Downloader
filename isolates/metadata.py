@@ -17,6 +17,8 @@ from isolates.template import (metadata as metadata_template,
 
 class metadata_obj(object):
     ''' This class describes metadata associated with a sample '''
+    # Global Class Variables (shared across instances)
+    new_ontologies = {}
     def __init__(self, accession, settings=None):
         if settings is None: settings = default_metadata
         self.metadata = metadata_template
@@ -40,7 +42,6 @@ class metadata_obj(object):
         self.metadata[key] = value
     def ExtractData(self, query):
         ''' Extract Sample Metadata '''
-        new_ontologies = {}
         new_platforms = []
         new_seqtypes = []
         # New approach using runinfo list
@@ -83,6 +84,8 @@ class metadata_obj(object):
         # Extract sample attributes
         match = re.findall(r'Sample Attributes: (.+)\n', qdata)
         lcs = {} # location parts
+        host = None
+        source = None
         for answer in match:
             for attributes in answer.split(';'):
                 stat = attributes.split('=')
@@ -99,25 +102,9 @@ class metadata_obj(object):
                 elif att == 'strain':
                     self['strain'] = val
                 elif att in ['isolation_source', 'isolation source']:
-                    found = False
-                    for d in ontology:
-                        cats = [d[k][0] for k in d.keys() if k in val.lower()]
-                        if cats:
-                            found = True
-                            self['isolation_source'] = cats[0]
-                            break
-                    if not found:
-                        _logger.warning(
-                            'Source not identified: %s, %s',
-                            val, query
-                        )
-                        if not val in new_ontologies: new_ontologies[val] = query
-                    else:
-                        _logger.warning(
-                            'Source identified: %s, %s',
-                            val, query
-                        )
-                    self['source_note'] = val
+                    source = val
+                elif att in ['host']:
+                    host = val
                 elif att == 'BioSample':
                     self['biosample'] = val
                 elif att in ['collection_date', 'collection date']:
@@ -139,6 +126,32 @@ class metadata_obj(object):
             if lcs != {}:
                 h = ['country', 'region', 'city', 'zip_code']
                 self.__interpret_loc( ','.join([lcs[x] for x in h if x in lcs]))
+        # Handle Isolation source
+        cats = []
+        if host is not None:
+            for d in ontology:
+                cats = [d[k][0] for k in d.keys() if k in host.lower()]
+                if cats:
+                    break
+        if not cats and source is not None:
+            for d in ontology:
+                cats = [d[k][0] for k in d.keys() if k in val.lower()]
+                if cats:
+                    break
+        if cats:
+            self['isolation_source'] = cats[0]
+            _logger.warning(
+                'Source identified: %s, %s',
+                source, query
+            )
+        elif source is not None:
+            _logger.warning(
+                'Source not identified: %s, %s',
+                source, query
+            )
+            if not source in new_ontologies: new_ontologies[val] = query
+        self['source_note'] = val
+
         # Extract Run IDs associated with the sample
         #Run #1: ERR276921, 1356661 spots, 271332200 bases
         self.runIDs = re.findall(r'Run #\d+: (.+?),.+', qdata)
