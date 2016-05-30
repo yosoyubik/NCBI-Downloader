@@ -318,6 +318,7 @@ fecal,human
 feces,human
 fluid,human
 human,human
+intestine,human
 liver,human
 patient,human
 rectal,human
@@ -329,6 +330,7 @@ wound,human
 ################################################################################
 bacterial,laboratory
 laboratory,laboratory
+lab strain,laboratory
 ################################################################################
 air,other,environmental
 bag,other
@@ -340,6 +342,7 @@ produc,other
 surface,other,environmental
 swab,other,environmental
 ################################################################################
+culture,unknown
 isolate,unknown
 missing,unknown
 na,unknown
