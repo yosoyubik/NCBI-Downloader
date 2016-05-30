@@ -166,9 +166,9 @@ class metadata_obj(object):
         self.runIDs = re.findall(r'Run #\d+: (.+?),.+', qdata)
         
         # Notify Curators By Email
-        _logger.warning('Make mail? %s'%(mail is not None))
+        _logger.info('Make mail? %s'%(mail is not None))
         if mail is not None:
-            _logger.warning('Any unknowns? %s'%(len(self.new_ontologies) > 0))
+            _logger.info('Any unknowns? %s'%(len(self.new_ontologies) > 0))
             if len(self.new_ontologies) > 0:
                 _logger.debug(mail.test(
                     'New isolation source...',
