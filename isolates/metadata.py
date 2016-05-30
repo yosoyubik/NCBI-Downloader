@@ -133,11 +133,19 @@ class metadata_obj(object):
                 cats = [d[k][0] for k in d.keys() if k in host.lower()]
                 if cats:
                     break
+        
+        if not cats and host not in self.new_ontologies:
+            self.new_ontologies[host] = query
+        
         if (not cats or cats[0] == 'unknown') and source is not None:
             for d in ontology:
                 cats = [d[k][0] for k in d.keys() if k in source.lower()]
                 if cats:
                     break
+            
+            if not cats and source not in self.new_ontologies:
+                self.new_ontologies[source] = query
+        
         if cats:
             self['isolation_source'] = cats[0]
             _logger.warning(
@@ -145,14 +153,8 @@ class metadata_obj(object):
                 self['isolation_source'], host, source, query
             )
         else:
-            if host is None:
-                host = 'unknown'
-            elif host not in self.new_ontologies:
-                self.new_ontologies[host] = query
-            if source is None:
-                source = 'unknown'
-            elif source not in self.new_ontologies:
-                self.new_ontologies[source] = query
+            if host is None:   host   = 'unknown'
+            if source is None: source = 'unknown'
             _logger.warning(
                 'Source not identified: (%s, %s), %s',
                 host, source, query
@@ -166,6 +168,7 @@ class metadata_obj(object):
         # Notify Curators By Email
         _logger.warning('Make mail? %s'%(mail is not None))
         if mail is not None:
+            _logger.warning('Any unknowns? %s'%(len(self.new_ontologies) > 0))
             if len(self.new_ontologies) > 0:
                 _logger.debug(mail.test(
                     'New isolation source...',
