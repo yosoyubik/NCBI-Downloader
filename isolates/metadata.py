@@ -164,28 +164,39 @@ class metadata_obj(object):
         self.runIDs = re.findall(r'Run #\d+: (.+?),.+', qdata)
         # Notify Curators By Email
         if mail is not None:
-            if len(self.new_ontologies)>0:
+            if len(self.new_ontologies) > 0:
                 _logger.debug(mail.test(
                     'New isolation source...',
                     'Sources not identified:\n%s\n'%(
-                        '\n'.join([', '.join(e) for e in self.new_ontologies.items()]))
+                        '\n'.join(map(', '.join, self.new_ontologies.items()))
+                        )
                     ))
                 mail.send(
                     'New isolation source...',
                     'Sources not identified:\n%s\n'%(
-                        '\n'.join([', '.join(e) for e in self.new_ontologies.items()]))
+                        '\n'.join(map(', '.join, self.new_ontologies.items()))
+                        )
                     )
-            if len(new_platforms)>0:
+            if len(new_platforms) > 0:
                 _logger.debug(mail.test(
                     'New platforms...',
                     'Platforms not accounted for:\n%s\n'%(
-                        '\n'.join(new_platforms))
+                        '\n'.join(new_platforms)
+                        )
                     ))
                 mail.send(
                     'New platforms...',
                     'Platforms not accounted for:\n%s\n'%(
-                        '\n'.join(new_platforms))
+                        '\n'.join(new_platforms)
+                        )
                     )
+        elif len(self.new_ontologies) > 0:
+            _logger.debug(
+                "NO MAIL!",
+                'Sources not identified:\n%s\n'%(
+                    '\n'.join(map(', '.join, self.new_ontologies.items()))
+                    )
+                )
     def valid_metadata(self):
         '''
         Checks if metadata is valid
