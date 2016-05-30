@@ -135,7 +135,7 @@ class metadata_obj(object):
                     break
         if not cats and source is not None:
             for d in ontology:
-                cats = [d[k][0] for k in d.keys() if k in val.lower()]
+                cats = [d[k][0] for k in d.keys() if k in source.lower()]
                 if cats:
                     break
         if cats:
@@ -144,29 +144,36 @@ class metadata_obj(object):
                 'Source identified: %s, %s',
                 source, query
             )
-        elif source is not None:
+        else:
+            if host is None:
+                host = 'unknown'
+            elif host not in self.new_ontologies:
+                self.new_ontologies[host] = query
+            if source is None:
+                source = 'unknown'
+            elif source not in self.new_ontologies:
+                self.new_ontologies[source] = query
             _logger.warning(
-                'Source not identified: %s, %s',
-                source, query
+                'Source not identified: (%s, %s), %s',
+                host, source, query
             )
-            if not source in new_ontologies: new_ontologies[val] = query
-        self['source_note'] = val
-
+        self['source_note'] = source
+        
         # Extract Run IDs associated with the sample
         #Run #1: ERR276921, 1356661 spots, 271332200 bases
         self.runIDs = re.findall(r'Run #\d+: (.+?),.+', qdata)
         # Notify Curators By Email
         if mail is not None:
-            if len(new_ontologies)>0:
+            if len(self.new_ontologies)>0:
                 _logger.debug(mail.test(
                     'New isolation source...',
                     'Sources not identified:\n%s\n'%(
-                        '\n'.join([', '.join(e) for e in new_ontologies.items()]))
+                        '\n'.join([', '.join(e) for e in self.new_ontologies.items()]))
                     ))
                 mail.send(
                     'New isolation source...',
                     'Sources not identified:\n%s\n'%(
-                        '\n'.join([', '.join(e) for e in new_ontologies.items()]))
+                        '\n'.join([', '.join(e) for e in self.new_ontologies.items()]))
                     )
             if len(new_platforms)>0:
                 _logger.debug(mail.test(
