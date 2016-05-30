@@ -133,7 +133,7 @@ class metadata_obj(object):
                 cats = [d[k][0] for k in d.keys() if k in host.lower()]
                 if cats:
                     break
-        if not cats and source is not None:
+        if (not cats or cats[0] == 'unknown') and source is not None:
             for d in ontology:
                 cats = [d[k][0] for k in d.keys() if k in source.lower()]
                 if cats:
@@ -141,8 +141,8 @@ class metadata_obj(object):
         if cats:
             self['isolation_source'] = cats[0]
             _logger.warning(
-                'Source identified: %s, %s',
-                source, query
+                'Source identified: %s (%s, %s), %s',
+                self['isolation_source'], host, source, query
             )
         else:
             if host is None:
