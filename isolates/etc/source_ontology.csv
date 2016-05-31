@@ -330,8 +330,8 @@ urine,human
 wound,human
 ################################################################################
 bacterial,laboratory
-laboratory,laboratory
 lab strain,laboratory
+laboratory,laboratory
 ################################################################################
 air,other,environmental
 bag,other
@@ -347,9 +347,10 @@ culture,unknown
 isolate,unknown
 missing,unknown
 na,unknown
+not applicable,unknown
+not collected,unknown
+not known,unknown
 rupsha,unknown
 sample,unknown
 sentiment,unknown
 unknown,unknown
-not known,unknown
-not applicable,unknown
