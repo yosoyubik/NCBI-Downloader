@@ -330,8 +330,10 @@ urine,human
 wound,human
 ################################################################################
 bacterial,laboratory
+lab evolved,laboratory
 lab strain,laboratory
 laboratory,laboratory
+morbidostat,laboratory
 ################################################################################
 air,other,environmental
 bag,other
